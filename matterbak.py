@@ -33,7 +33,10 @@ def main():
     if options.output_zip is None:
         options.output_zip = "matterbak_%s.zip" % options.backup_user
     matter = mattermost.MMApi(creds["url"])
-    matter.login(creds["user"], creds["password"])
+    if "token" in creds:
+        matter.login(bearer=creds["token"])
+    else:
+        matter.login(creds["user"], creds["password"])
     for cat in ("teams", "channels", "users"):
         os.makedirs(cat, exist_ok=True)
     user = matter.get_user_by_username(options.backup_user)
@@ -42,18 +45,22 @@ def main():
     channels = []
     user_data = {}
     for team in matter.get_teams():
-        for member in matter.get_users_by_ids_list([m["user_id"] for m in matter.get_team_members(team["id"])]):
-            user_data[member["id"]] = member
-        if user["id"] in user_data:
-            with open(os.path.join("teams", team["name"] + ".json"), "w", encoding="utf8") as desc:
-                json.dump(team, desc)
-            for chnl in matter.get_channels_for_user(user["id"], team["id"]):
-                if options.all or chnl["type"] != "O":
-                    if options.include:
-                        if chnl["display_name"] in options.include or chnl["name"] in options.include:
+        try:
+            for member in matter.get_users_by_ids_list([m["user_id"] for m in matter.get_team_members(team["id"])]):
+                user_data[member["id"]] = member
+            if user["id"] in user_data:
+                with open(os.path.join("teams", team["name"] + ".json"), "w", encoding="utf8") as desc:
+                    json.dump(team, desc)
+                for chnl in matter.get_channels_for_user(user["id"], team["id"]):
+                    if options.all or chnl["type"] != "O":
+                        if options.include:
+                            if chnl["display_name"] in options.include or chnl["name"] in options.include:
+                                channels.append(chnl)
+                        elif chnl["display_name"] not in options.exclude and chnl["name"] not in options.exclude:
                             channels.append(chnl)
-                    elif chnl["display_name"] not in options.exclude and chnl["name"] not in options.exclude:
-                        channels.append(chnl)
+        except mattermost.ApiException as e:
+            print(team, e)
+    print(channels)
     for chnl in channels:
         name = chnl["name"]
         for i, data in user_data.items():

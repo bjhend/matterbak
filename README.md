@@ -15,6 +15,14 @@ You will need a json config (default name "credentials.json") of the following f
     "url": "https://mattermost.server.org/api"
 }
 ```
+or if you login via GitLab or a comparable service, replace "password" wth "token"
+and enter the MMAUTHTOKEN here. To retrieve it, login via your browser and inspect the cookies for MMAUTHTOKEN
+1. Open DevTools (F12)
+2. Go to Application (Chrome/Edge) or Storage (Firefox)
+3. Navigate to Cookies, look at your Mattermost domain
+
+This token will expire and change every time you logout.
+
 You can either install the script using `pip install .` in a clone of the repo or just call the script directly.
 
 A call to `matterbak` (installed version) or `matterbak.py` will then retrieve all teams and channels the user
