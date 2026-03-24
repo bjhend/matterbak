@@ -1,0 +1,38 @@
+{
+    "teams":
+    {
+        "team1":
+        {
+            "include": [ "channel1", "channel2", "channel3" ],
+            "exclude": [ "channel3" ]
+        },
+
+        "team2":
+        {
+        },
+
+        "team3":
+        {
+            "exclude": [ "channel4" ]
+        }
+    },
+
+    "direct":
+    [
+        "user1",
+        "user2"
+    ],
+
+    "groups":
+    {
+        "exact":
+        [
+            [ "user3", "user4" ]
+        ],
+
+        "subset":
+        [
+            [ "user3", "user5" ]
+        ]
+    }
+}

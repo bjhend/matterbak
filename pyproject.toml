@@ -1,3 +1,24 @@
+[project]
+name = "matterbak"
+description = "Backing up mattermost channels (including files) and users"
+version = "0.2.0"
+requires-python = ">= 3.8"
+dependencies = [
+    # mattermost lacks a required endpoint so we get it from a fork not yet merged
+    "mattermost @ git+https://github.com/bjhend/mattermost-python-api.git@endpoint/get_teams_for_user",
+]
+readme = "README.md"
+authors = [
+    { name="Michael Behrisch", email="oss@behrisch.de" },
+    { name="Björn Hendriks", email="bjoern.hendriks@dlr.de" },
+]
+
+
+[project.scripts]
+matterbak = "matterbak:main"
+
+
 [build-system]
 requires = [ "setuptools>=42" ]
 build-backend = "setuptools.build_meta"
+

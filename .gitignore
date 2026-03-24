@@ -1,6 +1,5 @@
 __pycache__
-channels
-teams
-users
+data/
 credentials.json
+build/
 matterbak.egg-info
