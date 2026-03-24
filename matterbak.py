@@ -44,7 +44,10 @@ def main():
         json.dump(user, desc)
     channels = []
     user_data = {}
+    num_teams = 0
+    not_permitted = 0
     for team in matter.get_teams():
+        num_teams += 1
         try:
             for member in matter.get_users_by_ids_list([m["user_id"] for m in matter.get_team_members(team["id"])]):
                 user_data[member["id"]] = member
@@ -59,8 +62,11 @@ def main():
                         elif chnl["display_name"] not in options.exclude and chnl["name"] not in options.exclude:
                             channels.append(chnl)
         except mattermost.ApiException as e:
-            print(team, e)
-    print(channels)
+            if "'status_code': 403" in str(e):
+                not_permitted += 1
+            else:
+                print(f"Cannot backup team '{team["display_name"]}'.", e)
+    print(f"Access to {num_teams - not_permitted} teams, {len(channels)} channels and {len(user_data)} users.")
     for chnl in channels:
         name = chnl["name"]
         for i, data in user_data.items():
