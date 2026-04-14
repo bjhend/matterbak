@@ -157,11 +157,15 @@ def dump_content(dir, name, content, replace=False):
     content: data to store
     replace: if set to True an existing file will be overwritten, else saving
              will be silently skipped
+
+    return: True if content was dumped
     """
     path = dir / f'{name}.json'
     if replace or (not path.exists()):
         with open(path, "w", encoding="utf8") as dump_file:
             json.dump(content, dump_file)
+            return True
+    return False
 
 
 def select_channels_by_names(all_channels, team_config, names_key):
@@ -243,16 +247,23 @@ def backup_channel(matter, name, channel, channels_dir):
 
     dump_content(channels_dir, name, channel, replace=True)
 
+    num_posts = 0
+    num_files = 0
     for post in matter.get_posts_for_channel(channel["id"]):
         date = datetime.datetime.fromtimestamp(post["create_at"] / 1000).strftime("%Y%m%d-%H%M%S%f")
-        dump_content(posts_dir, f'{date}_{post["id"]}', post, replace=False)
+        is_dumped = dump_content(posts_dir, f'{date}_{post["id"]}', post, replace=False)
+        if is_dumped:
+            num_posts += 1
 
         for file_desc in post["metadata"].get("files", []):
             dump_content(posts_dir, file_desc["id"], post, replace=False)
             file_dump_path = posts_dir / f'{file_desc["id"]}.{file_desc["extension"]}'
             if not file_dump_path.exists():
                 with open(file_dump_path, "wb") as dump:
-                    dump.write(matter.get_file(file_desc["id"]).content)
+                    is_dumped = dump.write(matter.get_file(file_desc["id"]).content)
+                    if is_dumped:
+                        num_files += 1
+    return num_posts, num_files
 
 
 def backup_direct_channels(init, users_cache):
@@ -280,7 +291,8 @@ def backup_direct_channels(init, users_cache):
         if channel_username in init.channels_config.get('direct', []):
             print(f"Dumping direct channel with '{channel_username}'")
             channel_dir = init.options.data_dir / direct_subdir
-            backup_channel(init.matter, channel_username, dc, channel_dir)
+            num_posts, num_files = backup_channel(init.matter, channel_username, dc, channel_dir)
+            print(f"    dumped {num_posts} posts and {num_files} files")
             all_user_ids.add(channel_user_id)
         else:
             print(f"Skip direct channel with '{channel_username}'")
@@ -311,7 +323,8 @@ def backup_group_channels(init, users_cache):
             name = group_name_separator.join(sorted(member_usernames))
             print(f"Dumping group channel with '{member_usernames}' as {name}")
             channel_dir = init.options.data_dir / groups_subdir
-            backup_channel(init.matter, name, gc, channel_dir)
+            num_posts, num_files = backup_channel(init.matter, name, gc, channel_dir)
+            print(f"    dumped {num_posts} posts and {num_files} files")
             all_user_ids |= set(members.keys())
         else:
             print(f"Skip group channel with '{member_usernames}'")
@@ -365,7 +378,8 @@ def backup_all_team_channels(init):
         for channel in backup_team_channels:
             channel_dir = team_dir / team_name
             print(f"    Dumping channel {channel['display_name']}")
-            backup_channel(init.matter, channel['name'], channel, channel_dir)
+            num_posts, num_files = backup_channel(init.matter, channel['name'], channel, channel_dir)
+            print(f"        dumped {num_posts} posts and {num_files} files")
 
         members = init.matter.get_team_members(team["id"])
         member_ids = { m['user_id'] for m in members }
