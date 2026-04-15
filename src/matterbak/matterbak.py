@@ -232,6 +232,31 @@ def get_channel_members(matter, channel_id, users_cache):
     return result
 
 
+def get_latest_post_id(posts_dir):
+    """Return latest ID of posts in posts_dir
+
+    This function assumes that the file names begin with a timestamps, such that
+    the latest post has the lexicographically highest name.
+
+    posts_dir: pathlib.Path of a dir with json files containing posts data
+
+    return: post ID contained in the file with the max file name or None
+    """
+    latest_post_file = posts_dir / ' '
+    for post_file in posts_dir.iterdir():
+        if post_file.suffix.lower() != '.json':
+            continue
+        if post_file.name > latest_post_file.name:
+            latest_post_file = post_file
+
+    if latest_post_file.exists():
+        with latest_post_file.open() as post_file:
+            post = json.load(post_file)
+            return post.get('id')
+
+    return None
+
+
 def backup_channel(matter, name, channel, channels_dir):
     """Download channel data and all its posts and files
 
@@ -246,10 +271,11 @@ def backup_channel(matter, name, channel, channels_dir):
     files_dir.mkdir(parents=True, exist_ok=True)
 
     dump_content(channels_dir, name, channel)
+    latest_id = get_latest_post_id(posts_dir)
 
     num_posts = 0
     num_files = 0
-    for post in matter.get_posts_for_channel(channel["id"]):
+    for post in matter.get_posts_for_channel(channel["id"], after=latest_id):
         print('.', end='', flush=True)
         date = datetime.datetime.fromtimestamp(post["create_at"] / 1000).strftime("%Y%m%d-%H%M%S%f")
         is_dumped = dump_content(posts_dir, f'{date}_{post["id"]}', post)

@@ -10,13 +10,17 @@ Mattermost knows several types of channels:
 
 You can configure for each type which channels should be backed up.
 
+Subsequent runs of the script with the same data dir will only update the channels with new posts. So you can run it once to create an initial backup and later update that backup by running it again. If you later add more channels to the configuration those will be downloaded as well.
+
+**Attention**: Updating will **skip** any changes to older posts. In that case you have to delete the changed post and *all* following posts from the channel dir. In case of doubt delete the entire channel dir.
+
 
 ## Requirements
 
 The script should work with Python 3.8 or later.
 The [mattermost module](https://github.com/someone-somenet-org/mattermost-python-api) is needed for easier API access.
 
-**Note** that we require a version with the additional endpoint `get_teams_for_user`. There is a currently open [pull request](https://github.com/someone-somenet-org/mattermost-python-api/pull/5) to add this endpoint to the package. Until the pull request is executed you may use  [its source branch](https://github.com/bjhend/mattermost-python-api/tree/endpoint/get_teams_for_user).
+**Note** that we require a version with the additional function `get_teams_for_user` and an extended function `get_posts_for_channel`. There are a currently open [pull requests](https://github.com/someone-somenet-org/mattermost-python-api/issues?q=is%3Aopen%20is%3Apr%20author%3A%40bjhend) to add these to the package. Until the pull requests are executed you may use the [`development` branch](https://github.com/bjhend/mattermost-python-api/tree/development) of [this repo](https://github.com/bjhend/mattermost-python-api) containing the changes of both pull requests.
 
 If you call the script with `uv run` or `poetry run` the required version of the `mattermost` package will be used.
 
