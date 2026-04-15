@@ -149,7 +149,7 @@ class Teams:
         return None
 
 
-def dump_content(dir, name, content, replace=False):
+def dump_content(dir, name, content):
     """Helper to safe the content as JSON file
 
     dir:     pathlib.Path of the folder to store the file in
@@ -161,10 +161,9 @@ def dump_content(dir, name, content, replace=False):
     return: True if content was dumped
     """
     path = dir / f'{name}.json'
-    if replace or (not path.exists()):
-        with open(path, "w", encoding="utf8") as dump_file:
-            json.dump(content, dump_file)
-            return True
+    with open(path, "w", encoding="utf8") as dump_file:
+        json.dump(content, dump_file)
+        return True
     return False
 
 
@@ -243,26 +242,31 @@ def backup_channel(matter, name, channel, channels_dir):
     """
 
     posts_dir = channels_dir / name
-    posts_dir.mkdir(parents=True, exist_ok=True)
+    files_dir = posts_dir / 'files'
+    files_dir.mkdir(parents=True, exist_ok=True)
 
-    dump_content(channels_dir, name, channel, replace=True)
+    dump_content(channels_dir, name, channel)
 
     num_posts = 0
     num_files = 0
     for post in matter.get_posts_for_channel(channel["id"]):
+        print('.', end='', flush=True)
         date = datetime.datetime.fromtimestamp(post["create_at"] / 1000).strftime("%Y%m%d-%H%M%S%f")
-        is_dumped = dump_content(posts_dir, f'{date}_{post["id"]}', post, replace=False)
+        is_dumped = dump_content(posts_dir, f'{date}_{post["id"]}', post)
         if is_dumped:
             num_posts += 1
 
         for file_desc in post["metadata"].get("files", []):
-            dump_content(posts_dir, file_desc["id"], post, replace=False)
-            file_dump_path = posts_dir / f'{file_desc["id"]}.{file_desc["extension"]}'
+            file_id = file_desc["id"]
+            dump_content(files_dir, file_id, post)
+            file_dump_path = files_dir / f'{file_id}__{file_desc["name"]}'
             if not file_dump_path.exists():
                 with open(file_dump_path, "wb") as dump:
-                    is_dumped = dump.write(matter.get_file(file_desc["id"]).content)
+                    is_dumped = dump.write(matter.get_file(file_id).content)
                     if is_dumped:
                         num_files += 1
+    # Newline after progress dots
+    print()
     return num_posts, num_files
 
 
@@ -374,7 +378,7 @@ def backup_all_team_channels(init):
         team_name = team['name']
         team_dir = init.options.data_dir / teams_subdir
         team_dir.mkdir(parents=True, exist_ok=True)
-        dump_content(team_dir, team_name, team, replace=False)
+        dump_content(team_dir, team_name, team)
         for channel in backup_team_channels:
             channel_dir = team_dir / team_name
             print(f"    Dumping channel {channel['display_name']}")
@@ -399,7 +403,7 @@ def backup_users(init, all_user_ids):
     users_dir = init.options.data_dir / users_subdir
     users_dir.mkdir(parents=True, exist_ok=True)
     for user in all_users.values():
-        dump_content(users_dir, user["username"], user, replace=True)
+        dump_content(users_dir, user["username"], user)
 
 
 def create_zip_file(init):
