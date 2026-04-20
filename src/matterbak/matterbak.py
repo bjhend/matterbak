@@ -311,6 +311,7 @@ def backup_direct_channels(init, users_cache):
     print("\n---DIRECT CHANNELS---")
     all_user_ids = set()
     all_direct_channels = init.teams.get_personal_channels(is_group=False)
+    configured_direct_channels = set(init.channels_config.get('direct', []))
     for dc in all_direct_channels:
         members = get_channel_members(init.matter, dc['id'], users_cache)
         # Discard user's own ID except there is no other user (messages to self)
@@ -318,14 +319,19 @@ def backup_direct_channels(init, users_cache):
             del members[init.user_id]
         assert len(members) == 1, "A direct channel has more than one user"
         channel_user_id, channel_username = members.popitem()
-        if channel_username in init.channels_config.get('direct', []):
+        if channel_username in configured_direct_channels:
             print(f"Dumping direct channel with '{channel_username}'")
             channel_dir = init.options.data_dir / direct_subdir
             num_posts, num_files = backup_channel(init.matter, channel_username, dc, channel_dir)
             print(f"    dumped {num_posts} posts and {num_files} files")
             all_user_ids.add(channel_user_id)
+            configured_direct_channels.discard(channel_username)
         else:
             print(f"Skip direct channel with '{channel_username}'")
+
+    if(configured_direct_channels):
+        print(f"\nConfigured but missing direct channels: {configured_direct_channels}")
+
     return all_user_ids
 
 
