@@ -468,6 +468,10 @@ def main():
         backup_users(init, all_user_ids)
         create_zip_file(init)
 
+    except json.JSONDecodeError as ex:
+        print(f"JSON structure broken (note that a common cause for a misleading message is a comma after the last element of a container): {ex}")
+        exit(1)
+
     except mattermost.ApiException as ex:
         print(f"Error accessing Mattermost: {ex}")
         exit(1)
