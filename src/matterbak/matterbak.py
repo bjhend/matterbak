@@ -269,11 +269,13 @@ def backup_channel(matter, name, channel, channels_dir):
 
     num_posts = 0
     num_files = 0
+    user_ids = set()
     for post in matter.get_posts_for_channel(channel["id"], after=latest_id):
         print('.', end='', flush=True)
         date = datetime.datetime.fromtimestamp(post["create_at"] / 1000).strftime("%Y%m%d-%H%M%S%f")
         dump_content(posts_dir, f'{date}_{post["id"]}', post)
         num_posts += 1
+        user_ids.add(post['user_id'])
 
         for file_desc in post["metadata"].get("files", []):
             file_id = file_desc["id"]
@@ -286,7 +288,7 @@ def backup_channel(matter, name, channel, channels_dir):
                         num_files += 1
     # Newline after progress dots
     print()
-    return num_posts, num_files
+    return num_posts, num_files, user_ids
 
 
 def backup_direct_channels(init, users_cache):
@@ -315,7 +317,7 @@ def backup_direct_channels(init, users_cache):
         if channel_username in configured_direct_channels:
             print(f"Dumping direct channel with '{channel_username}'")
             channel_dir = init.options.data_dir / direct_subdir
-            num_posts, num_files = backup_channel(init.matter, channel_username, dc, channel_dir)
+            num_posts, num_files, dummy = backup_channel(init.matter, channel_username, dc, channel_dir)
             print(f"    dumped {num_posts} posts and {num_files} files")
             all_user_ids.add(channel_user_id)
             configured_direct_channels.discard(channel_username)
@@ -352,7 +354,7 @@ def backup_group_channels(init, users_cache):
             name = group_name_separator.join(sorted(member_usernames))
             print(f"Dumping group channel with '{member_usernames}' as {name}")
             channel_dir = init.options.data_dir / groups_subdir
-            num_posts, num_files = backup_channel(init.matter, name, gc, channel_dir)
+            num_posts, num_files, dummy = backup_channel(init.matter, name, gc, channel_dir)
             print(f"    dumped {num_posts} posts and {num_files} files")
             all_user_ids |= set(members.keys())
         else:
@@ -407,7 +409,8 @@ def backup_all_team_channels(init):
         for channel in backup_team_channels:
             channel_dir = team_dir / team_name
             print(f"    Dumping channel {channel['display_name']}")
-            num_posts, num_files = backup_channel(init.matter, channel['name'], channel, channel_dir)
+            num_posts, num_files, post_user_ids = backup_channel(init.matter, channel['name'], channel, channel_dir)
+            all_user_ids |= post_user_ids
             print(f"        dumped {num_posts} posts and {num_files} files")
 
         members = init.matter.get_team_members(team["id"])
