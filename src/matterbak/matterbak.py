@@ -281,11 +281,8 @@ def backup_channel(matter, name, channel, channels_dir):
             file_id = file_desc["id"]
             dump_content(files_dir, file_id, post)
             file_dump_path = files_dir / f'{file_id}__{file_desc["name"]}'
-            if not file_dump_path.exists():
-                with open(file_dump_path, "wb") as dump:
-                    is_dumped = dump.write(matter.get_file(file_id).content)
-                    if is_dumped:
-                        num_files += 1
+            file_dump_path.write_bytes(matter.get_file(file_id).content)
+            num_files += 1
     # Newline after progress dots
     print()
     return num_posts, num_files, user_ids
