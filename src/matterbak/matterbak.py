@@ -155,16 +155,10 @@ def dump_content(dir, name, content):
     dir:     pathlib.Path of the folder to store the file in
     name:    name (without .json extension) of the file
     content: data to store
-    replace: if set to True an existing file will be overwritten, else saving
-             will be silently skipped
-
-    return: True if content was dumped
     """
     path = dir / f'{name}.json'
     with open(path, "w", encoding="utf8") as dump_file:
         json.dump(content, dump_file)
-        return True
-    return False
 
 
 def select_channels_by_names(all_channels, team_config, names_key):
@@ -278,9 +272,8 @@ def backup_channel(matter, name, channel, channels_dir):
     for post in matter.get_posts_for_channel(channel["id"], after=latest_id):
         print('.', end='', flush=True)
         date = datetime.datetime.fromtimestamp(post["create_at"] / 1000).strftime("%Y%m%d-%H%M%S%f")
-        is_dumped = dump_content(posts_dir, f'{date}_{post["id"]}', post)
-        if is_dumped:
-            num_posts += 1
+        dump_content(posts_dir, f'{date}_{post["id"]}', post)
+        num_posts += 1
 
         for file_desc in post["metadata"].get("files", []):
             file_id = file_desc["id"]
