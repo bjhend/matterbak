@@ -10,6 +10,7 @@ import os
 import zipfile
 import pprint
 import pathlib as pl
+import http
 
 # NOTE: You need to provide a fork of the mattermost package containing
 #       get_teams_for_user endpoint unless the related pull request is executed
@@ -284,7 +285,8 @@ def backup_channel(matter, name, channel, channels_dir):
             file_dump_path.write_bytes(matter.get_file(file_id).content)
             num_files += 1
     # Newline after progress dots
-    print()
+    if num_posts > 0:
+        print()
     return num_posts, num_files, user_ids
 
 
@@ -377,7 +379,7 @@ def backup_all_team_channels(init):
     print("\n---TEAM CHANNELS---")
     all_user_ids = set()
     for team_name, team_config in init.channels_config.get('teams', {}).items():
-        print(f"Team {team_name}")
+        print(f"\nTeam {team_name}")
         team = init.teams.get_team_by_name(team_name)
         if not team:
             print(f"    User \'{init.username}\' does not have access to team \'{team_name}\'. Skipping team.")
@@ -423,11 +425,36 @@ def backup_users(init, all_user_ids):
     all_user_ids: IDs of all user data to save
     """
 
-    print("\n---BACKUP USERS---")
-    all_users = { u['id']: u for u in init.matter.get_users_by_ids_list(list(all_user_ids)) }
+    print(f"\n---BACKUP {len(all_user_ids)} USERS---")
+
+    def get_user_data(user_ids):
+        """Get user data for given user IDs
+
+        If the list of user IDs is too long for the API we split it in half and
+        try again recursively.
+        """
+        try:
+            users = { HashableMatterData(u) for u in init.matter.get_users_by_ids_list(list(user_ids)) }
+
+        except mattermost.ApiException as ex:
+            if ex.args[0]['status_code'] != http.HTTPStatus.REQUEST_ENTITY_TOO_LARGE:
+                raise
+
+            # split set of user IDs
+            half_len = int(len(user_ids) / 2)
+            second_half = user_ids.copy()
+            first_half = { second_half.pop() for i in range(half_len) }
+
+            # recursively get user data for both halfs
+            users = get_user_data(first_half)
+            users |= get_user_data(second_half)
+
+        return users
+
+    all_users = get_user_data(all_user_ids)
     users_dir = init.options.data_dir / users_subdir
     users_dir.mkdir(parents=True, exist_ok=True)
-    for user in all_users.values():
+    for user in all_users:
         dump_content(users_dir, user["username"], user)
 
 
