@@ -154,6 +154,10 @@ class Teams:
 def dump_content(dir, content, name=None, with_timestamp=False):
     """Helper to safe the content as JSON file
 
+    The filename will be assembled from dir and name with current timestamp as
+    prefix if with_timestamp is True and content ID as prefix (if content is a
+    dict with 'id' key).
+
     dir:            pathlib.Path of the folder to store the file in
     name:           name (without .json extension) of the file, can be empty
     with_timestamp: set to True to prefix filename with content's creation time
@@ -161,14 +165,19 @@ def dump_content(dir, content, name=None, with_timestamp=False):
     """
 
     # Assemble filename
-    filename = ''
+    filename_parts = []
     if with_timestamp:
         now = datetime.datetime.fromtimestamp(content["create_at"] / 1000)
-        filename += now.strftime(timestamp_format) + filename_separator
-    filename += content['id']
+        filename_parts.append(now.strftime(timestamp_format))
+
+    id_string = content.get('id') if isinstance(content, dict) else None
+    if id_string:
+        filename_parts.append(id_string)
+
     if name:
-        filename += filename_separator + name
-    filename += '.json'
+        filename_parts.append(name)
+
+    filename = filename_separator.join(filename_parts) + '.json'
 
     path = dir / filename
     with open(path, "w", encoding="utf8") as dump_file:
@@ -274,11 +283,16 @@ def backup_channel(matter, name, channel, channels_dir):
     channels_dir: pathlib.Path with the dir to store the data in
     """
 
-    posts_dir = channels_dir / f"{channel['id']}{filename_separator}{name}"
+    filename = f"{channel['id']}{filename_separator}{name}"
+    posts_dir = channels_dir / filename
     files_dir = posts_dir / 'files'
     files_dir.mkdir(parents=True, exist_ok=True)
 
     dump_content(channels_dir, channel, name)
+
+    members = list(matter.get_channel_members(channel['id']))
+    dump_content(channels_dir, members, f"{filename}{filename_separator}members")
+
     latest_id = get_latest_post_id(posts_dir)
 
     num_posts = 0
@@ -286,7 +300,6 @@ def backup_channel(matter, name, channel, channels_dir):
     user_ids = set()
     for post in matter.get_posts_for_channel(channel["id"], after=latest_id):
         print('.', end='', flush=True)
-        date = datetime.datetime.fromtimestamp(post["create_at"] / 1000).strftime("%Y%m%d-%H%M%S%f")
         dump_content(posts_dir, post, with_timestamp=True)
         num_posts += 1
         user_ids.add(post['user_id'])
@@ -425,7 +438,8 @@ def backup_all_team_channels(init):
             all_user_ids |= post_user_ids
             print(f"        dumped {num_posts} posts and {num_files} files")
 
-        members = init.matter.get_team_members(team["id"])
+        members = list(init.matter.get_team_members(team["id"]))
+        dump_content(team_dir, members, f"{team['id']}{filename_separator}{team_name}{filename_separator}members")
         member_ids = { m['user_id'] for m in members }
         all_user_ids |= member_ids
     return all_user_ids
