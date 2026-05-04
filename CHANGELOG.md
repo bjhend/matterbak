@@ -13,6 +13,7 @@
   avoid potential problems with unsuitable characters
   - **Attention:** To update the paths delete the teams folder and repeat matterbak
     while you may skip anything except teams
+* Add `matterexport` script to export stored data, currently only Markdown is supported
 
 
 ## 0.3.1

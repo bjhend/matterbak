@@ -2,10 +2,11 @@
 name = "matterbak"
 description = "Backing up mattermost channels (including files) and users"
 version = "0.3.1"
-requires-python = ">= 3.8"
+requires-python = ">= 3.10"
 dependencies = [
     # mattermost lacks a required endpoint so we get it from a fork not yet merged
     "mattermost @ git+https://github.com/bjhend/mattermost-python-api.git@development",
+    "icecream"   # for development support
 ]
 readme = "README.md"
 authors = [
@@ -17,6 +18,7 @@ authors = [
 
 [project.scripts]
 matterbak = "matterbak.matterbak:main"
+matterexport = "matterexport.matterexport:main"
 
 
 [build-system]

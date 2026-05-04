@@ -21,7 +21,7 @@ We implement safe interruption handling: Writes of images and JSON files are pro
 
 ## Requirements
 
-The script should work with Python 3.8 or later.
+The script should work with Python 3.10 or later.
 The [mattermost module](https://github.com/someone-somenet-org/mattermost-python-api) is needed for easier API access.
 
 **Note** that we require a version of the mattermost module with additional functions. For some of the additions there are already open [pull requests](https://github.com/someone-somenet-org/mattermost-python-api/issues?q=is%3Aopen%20is%3Apr%20author%3A%40bjhend) to add these to the package.
