@@ -524,6 +524,15 @@ def backup_team_channels(init):
         team_dir = init.options.data_dir / teams_subdir
         team_dir.mkdir(parents=True, exist_ok=True)
         dump_content(team_dir, team, team_name)
+
+        icon_response = init.matter.get_team_icon(team['id'])
+        if icon_response.ok:
+            content_type = icon_response.headers.get('content-type', '')
+            if content_type.startswith('image/'):
+                image_type = content_type.removeprefix('image/')
+                path = team_dir / f"{team['id']}{filename_separator}icon.{image_type}"
+                path.write_bytes(icon_response.content)
+
         for channel in backup_team_channels:
             channel_dir = team_dir / f"{team['id']}{filename_separator}{team_name}"
             print(f"    Dumping channel '{channel['display_name']}'")
