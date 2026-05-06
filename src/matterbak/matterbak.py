@@ -483,7 +483,7 @@ def select_channels_by_names(all_channels, team_config, names_key):
     return channels
 
 
-def backup_all_team_channels(init):
+def backup_team_channels(init):
     """Store data of configured teams
 
     init: instance of the Init class
@@ -557,7 +557,7 @@ def main():
             backup_group_channels(init)
 
         if not init.options.skip_teams:
-            backup_all_team_channels(init)
+            backup_team_channels(init)
 
         init.users.backup_all_users()
         create_zip_file(init)
