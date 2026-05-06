@@ -57,21 +57,27 @@ class Init:
         teams:           initialized Teams object
         """
 
-        self.options = self._parse_command_line()
+        try:
+            self.options = self._parse_command_line()
 
-        with open(self.options.credentials, encoding="utf8") as cred_file:
-            creds = json.load(cred_file)
-        self.calling_username = creds["user"]
-        print(f"Using user '{self.calling_username}'")
+            with open(self.options.credentials, encoding="utf8") as cred_file:
+                creds = json.load(cred_file)
+            self.calling_username = creds["user"]
+            print(f"Using user '{self.calling_username}'")
 
-        self.matter = self._get_mattermost_api(creds)
+            self.matter = self._get_mattermost_api(creds)
 
-        if self.options.output_zip is None:
-            self.options.output_zip = pl.Path(f'matterbak_{self.calling_username}.zip')
+            if self.options.output_zip is None:
+                self.options.output_zip = pl.Path(f'matterbak_{self.calling_username}.zip')
 
-        with open(self.options.channels, encoding="utf8") as channels_config_file:
-            self.channels_config = json.load(channels_config_file)
-        print(f"channels config:\n{pprint.pformat(self.channels_config)}")
+            with open(self.options.channels, encoding="utf8") as channels_config_file:
+                self.channels_config = json.load(channels_config_file)
+            print(f"channels config:\n{pprint.pformat(self.channels_config)}")
+
+        except json.JSONDecodeError as ex:
+            print(f"JSON structure of a config file broken (note that a common cause for a "
+                  f"misleading error message is a comma after the last element of a container): {ex}")
+            exit(1)
 
         calling_user = self.matter.get_user_by_username(self.calling_username)
         self.calling_user_id = calling_user["id"]
@@ -555,10 +561,6 @@ def main():
 
         init.users.backup_all_users()
         create_zip_file(init)
-
-    except json.JSONDecodeError as ex:
-        print(f"JSON structure broken (note that a common cause for a misleading message is a comma after the last element of a container): {ex}")
-        exit(1)
 
     except mattermost.ApiException as ex:
         print(f"Error accessing Mattermost: {ex}")
