@@ -101,6 +101,8 @@ class Init:
                             help="skip group channels")
         parser.add_argument("--skip-teams", action="store_true", default=False,
                             help="skip team channels")
+        parser.add_argument("--store-user-images", action="store_true", default=False,
+                            help="Store user images")
         return parser.parse_args()
 
     def _get_mattermost_api(self, creds):
@@ -284,13 +286,45 @@ class Users:
         # Dump all user data
         all_user_ids = member_user_ids | known_user_ids
         for user_id in all_user_ids:
+            print('.', end='', flush=True)
             user = self.get_user_data(user_id)
             dump_content(users_dir, user, user["username"])
 
+            if self._init.options.store_user_images:
+                image_response = self._init.matter.get_user_profile_image(user_id)
+                dump_image(users_dir, user_id, image_response, 'image')
+        print()
+
+
+def dump_image(dir, id_, response, label=None):
+    """Helper to save an image received from Mattermost
+
+    dir:      pathlib.Path of the folder to store the image in
+    id_:      Mattermost ID as prefix for the filename
+    response: Response object recevied from Mattermost API
+    label:    label to append to filename
+    """
+    content_type_prefix = 'image/'
+
+    if not response.ok:
+        return
+
+    content_type = response.headers.get('content-type', '')
+    if not content_type.startswith(content_type_prefix):
+        print(f"Cannot store image of type '{content_type}' for ID {id_}")
+        return
+
+    image_type = content_type.removeprefix(content_type_prefix)
+    filename = f"{id_}"
+    if label:
+        filename += f"{filename_separator}{label}"
+    filename += f".{image_type}"
+    path = dir / filename
+    path.write_bytes(response.content)
 
 
 def dump_content(dir, content, name=None, with_timestamp=False):
-    """Helper to safe the content as JSON file
+    """Helper to save the content as JSON file
 
     The filename will be assembled from dir and name with current timestamp as
     prefix if with_timestamp is True and content ID as prefix (if content is a
@@ -526,12 +560,7 @@ def backup_team_channels(init):
         dump_content(team_dir, team, team_name)
 
         icon_response = init.matter.get_team_icon(team['id'])
-        if icon_response.ok:
-            content_type = icon_response.headers.get('content-type', '')
-            if content_type.startswith('image/'):
-                image_type = content_type.removeprefix('image/')
-                path = team_dir / f"{team['id']}{filename_separator}icon.{image_type}"
-                path.write_bytes(icon_response.content)
+        dump_image(team_dir, team['id'], icon_response, 'icon')
 
         for channel in backup_team_channels:
             channel_dir = team_dir / f"{team['id']}{filename_separator}{team_name}"
