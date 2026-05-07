@@ -11,6 +11,8 @@ import zipfile
 import pprint
 import pathlib as pl
 import http
+import functools
+from icecream import ic
 
 # NOTE: You need to provide a fork of the mattermost package containing
 #       get_teams_for_user endpoint unless the related pull request is executed
@@ -32,6 +34,7 @@ users_subdir = pl.Path('users')
 teams_subdir = pl.Path('teams')
 groups_subdir = pl.Path('groups')
 direct_subdir = pl.Path('direct')
+emojis_subdir = pl.Path('emojis')
 files_subdir = pl.Path('files')
 
 # Separator between parts of a filename
@@ -101,8 +104,10 @@ class Init:
                             help="skip group channels")
         parser.add_argument("--skip-teams", action="store_true", default=False,
                             help="skip team channels")
-        parser.add_argument("--store-user-images", action="store_true", default=False,
-                            help="Store user images")
+        parser.add_argument("--skip-user-images", action="store_true", default=False,
+                            help="Skip storing user images")
+        parser.add_argument("--skip-emojis", action="store_true", default=False,
+                            help="Skip storing custom emojis")
         return parser.parse_args()
 
     def _get_mattermost_api(self, creds):
@@ -288,72 +293,113 @@ class Users:
         for user_id in all_user_ids:
             print('.', end='', flush=True)
             user = self.get_user_data(user_id)
-            dump_content(users_dir, user, user["username"])
+            old_user_data = dump_content(users_dir, user, name=user["username"], return_old_content=True)
 
-            if self._init.options.store_user_images:
-                image_response = self._init.matter.get_user_profile_image(user_id)
-                dump_image(users_dir, user_id, image_response, 'image')
+            if self._init.options.skip_user_images:
+                continue
+
+            skip_existing = False
+            if old_user_data:
+                current_last_picture_update = user.get('last_picture_update', 0)
+                old_last_picture_update = old_user_data.get('last_picture_update', 0)
+                if current_last_picture_update <= old_last_picture_update:
+                    skip_existing = True
+
+            image_loader = functools.partial(self._init.matter.get_user_profile_image, user_id)
+            dump_image(users_dir, user_id, image_loader,
+                       label=f'{user["username"]}{filename_separator}image',
+                       skip_existing=skip_existing)
+
         print()
 
 
-def dump_image(dir, id_, response, label=None):
-    """Helper to save an image received from Mattermost
+def make_filename(id_, name=None, extension='', mm_timestamp=None):
+    """Make a filename for a backup file
 
-    dir:      pathlib.Path of the folder to store the image in
-    id_:      Mattermost ID as prefix for the filename
-    response: Response object recevied from Mattermost API
-    label:    label to append to filename
+    id_:          Mattermost ID to insert into the filename
+    name:         optional name to append
+    extension:    optional extension for the filename
+    mm_timestamp: optional Mattermost timestamp (Unix time in milliseconds)
+
+    return: filename
     """
-    content_type_prefix = 'image/'
+    filename_parts = []
+    if mm_timestamp:
+        now = datetime.datetime.fromtimestamp(mm_timestamp / 1000)
+        filename_parts.append(now.strftime(timestamp_format))
+    filename_parts.append(id_)
+    if name:
+        filename_parts.append(name)
 
+    return  filename_separator.join(filename_parts) + extension
+
+
+def dump_image(dir, id_, image_loader, label=None, skip_existing=False):
+    """Helper to download save an image from Mattermost
+
+    dir:           pathlib.Path of the folder to store the image in
+    id_:           Mattermost ID as prefix for the filename
+    image_loader:  function returning an image Response object from Mattermost API
+    label:         label to append to filename
+    skip_existing: if True skip download if image file already exists
+    """
+
+    found_image_files = [ f for f in dir.glob(id_+'*') if f.suffix != '.json' ]
+    if skip_existing and found_image_files:
+        return
+
+    # The new image file may have a different extension so delete all existing
+    # image files.
+    for image in found_image_files:
+        image.unlink(missing_ok=True)
+
+    response = image_loader()
     if not response.ok:
         return
 
+    content_type_prefix = 'image/'
     content_type = response.headers.get('content-type', '')
     if not content_type.startswith(content_type_prefix):
         print(f"Cannot store image of type '{content_type}' for ID {id_}")
         return
+    extension = '.' + content_type.removeprefix(content_type_prefix)
 
-    image_type = content_type.removeprefix(content_type_prefix)
-    filename = f"{id_}"
-    if label:
-        filename += f"{filename_separator}{label}"
-    filename += f".{image_type}"
-    path = dir / filename
+    path = dir / make_filename(id_=id_, name=label, extension=extension)
     path.write_bytes(response.content)
 
 
-def dump_content(dir, content, name=None, with_timestamp=False):
+def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return_old_content=False):
     """Helper to save the content as JSON file
 
     The filename will be assembled from dir and name with current timestamp as
     prefix if with_timestamp is True and content ID as prefix (if content is a
     dict with 'id' key).
 
-    dir:            pathlib.Path of the folder to store the file in
-    name:           name (without .json extension) of the file, can be empty
-    with_timestamp: set to True to prefix filename with content's creation time
-    content:        data to store
+    dir:                pathlib.Path of the folder to store the file in
+    content:            data to store
+    id_:                Mattermost ID to be integrated into filename, if None use
+                        content['id'] instead
+    name:               name (without .json extension) of the file, can be empty
+    with_timestamp:     set to True to prefix filename with content's creation time
+    return_old_content: if True content of file to be overwritten is returned
+                        or None if there was no content file
     """
 
-    # Assemble filename
-    filename_parts = []
-    if with_timestamp:
-        now = datetime.datetime.fromtimestamp(content["create_at"] / 1000)
-        filename_parts.append(now.strftime(timestamp_format))
+    if not id_:
+        id_ = content['id']
+    mm_timestamp = content["create_at"] if with_timestamp else None
 
-    id_string = content.get('id') if isinstance(content, dict) else None
-    if id_string:
-        filename_parts.append(id_string)
+    path = dir / make_filename(id_, name=name, extension='.json', mm_timestamp=mm_timestamp)
 
-    if name:
-        filename_parts.append(name)
+    old_content = None
+    if return_old_content and path.is_file():
+        with path.open(encoding="utf8") as old_file:
+            old_content = json.load(old_file)
 
-    filename = filename_separator.join(filename_parts) + '.json'
-
-    path = dir / filename
-    with open(path, "w", encoding="utf8") as dump_file:
+    with path.open(mode="w", encoding="utf8") as dump_file:
         json.dump(content, dump_file)
+
+    return old_content
 
 
 def get_latest_post_id(posts_dir):
@@ -374,7 +420,7 @@ def get_latest_post_id(posts_dir):
             latest_post_file = post_file
 
     if latest_post_file.exists():
-        with latest_post_file.open() as post_file:
+        with latest_post_file.open(encoding="utf8") as post_file:
             post = json.load(post_file)
             return post.get('id')
 
@@ -390,37 +436,39 @@ def backup_channel(init, name, channel, channels_dir):
     channels_dir: pathlib.Path with the dir to store the data in
     """
 
-    filename = f"{channel['id']}{filename_separator}{name}"
-    posts_dir = channels_dir / filename
+    posts_dir = channels_dir / make_filename(channel['id'], name=name)
     files_dir = posts_dir / files_subdir
     files_dir.mkdir(parents=True, exist_ok=True)
 
-    dump_content(channels_dir, channel, name)
+    dump_content(channels_dir, channel, name=name)
 
     members = init.users.get_group_members(channel)
-    dump_content(channels_dir, members, f"{filename}{filename_separator}members")
+    dump_content(channels_dir, members, id_=channel['id'], name=f"{name}{filename_separator}members")
 
     latest_id = get_latest_post_id(posts_dir)
 
     num_posts = 0
     num_files = 0
-    user_ids = set()
     for post in init.matter.get_posts_for_channel(channel["id"], after=latest_id):
         print('.', end='', flush=True)
         dump_content(posts_dir, post, with_timestamp=True)
         num_posts += 1
-        user_ids.add(post['user_id'])
 
         for file_desc in post["metadata"].get("files", []):
             file_id = file_desc["id"]
             dump_content(files_dir, file_desc)
-            file_dump_path = files_dir / f'{file_id}{filename_separator}{file_desc["name"]}'
-            file_dump_path.write_bytes(init.matter.get_file(file_id).content)
-            num_files += 1
+            file_respone = init.matter.get_file(file_id)
+            if file_respone.ok:
+                # extension is contained in name
+                file_dump_path = files_dir / make_filename(file_id, name=file_desc['name'])
+                file_dump_path.write_bytes(file_respone.content)
+                num_files += 1
+            else:
+                print(f"Cannot retrieve the file '{file_desc['name']}' posted to channel '{name}': {file_respone.text}")
     # Newline after progress dots
     if num_posts > 0:
         print()
-    return num_posts, num_files, user_ids
+    return num_posts, num_files
 
 
 def backup_direct_channels(init):
@@ -443,7 +491,7 @@ def backup_direct_channels(init):
         if channel_username in configured_direct_channels:
             print(f"Dumping direct channel with '{channel_username}'")
             channel_dir = init.options.data_dir / direct_subdir
-            num_posts, num_files, dummy = backup_channel(init, channel_username, dc, channel_dir)
+            num_posts, num_files = backup_channel(init, channel_username, dc, channel_dir)
             print(f"    dumped {num_posts} posts and {num_files} files")
             configured_direct_channels.discard(channel_username)
         else:
@@ -492,7 +540,7 @@ def backup_group_channels(init):
             name = filename_separator.join(sorted(member_usernames))
             print(f"Dumping group channel with '{member_usernames}' as {name}")
             channel_dir = init.options.data_dir / groups_subdir
-            num_posts, num_files, dummy = backup_channel(init, name, gc, channel_dir)
+            num_posts, num_files = backup_channel(init, name, gc, channel_dir)
             print(f"    dumped {num_posts} posts and {num_files} files")
         else:
             print(f"Skip group channel with '{member_usernames}'")
@@ -535,7 +583,6 @@ def backup_team_channels(init):
         print(f"    {len(channel_names)}/{len(team_channels)} channels {label}: {channel_names}")
 
     print("\n---TEAM CHANNELS---")
-    all_user_ids = set()
     for team_name, team_config in init.channels_config.get('teams', {}).items():
         print(f"\nTeam '{team_name}'")
         team = init.teams.get_team_by_name(team_name)
@@ -557,7 +604,7 @@ def backup_team_channels(init):
 
         team_dir = init.options.data_dir / teams_subdir
         team_dir.mkdir(parents=True, exist_ok=True)
-        dump_content(team_dir, team, team_name)
+        dump_content(team_dir, team, name=team_name)
 
         icon_response = init.matter.get_team_icon(team['id'])
         dump_image(team_dir, team['id'], icon_response, 'icon')
@@ -565,12 +612,35 @@ def backup_team_channels(init):
         for channel in backup_team_channels:
             channel_dir = team_dir / f"{team['id']}{filename_separator}{team_name}"
             print(f"    Dumping channel '{channel['display_name']}'")
-            num_posts, num_files, post_user_ids = backup_channel(init, channel['name'], channel, channel_dir)
-            all_user_ids |= post_user_ids
+            num_posts, num_files = backup_channel(init, channel['name'], channel, channel_dir)
             print(f"        dumped {num_posts} posts and {num_files} files")
 
         members = init.users.get_group_members(team)
-        dump_content(team_dir, members, f"{team['id']}{filename_separator}{team_name}{filename_separator}members")
+        dump_content(team_dir, members, id_=team['id'], name=f"{team_name}{filename_separator}members")
+
+
+def backup_custom_emojis(init):
+    """Backup all custom emojis
+
+    init: instance of the Init class
+    """
+
+    print("\n---CUSTOM EMOJIS---")
+
+    emojis_dir = init.options.data_dir / emojis_subdir
+    emojis_dir.mkdir(parents=True, exist_ok=True)
+
+    for emoji in init.matter.get_list_of_custom_emojis():
+        print('.', end='', flush=True)
+
+        skip_existing = False
+        old_emoji = dump_content(emojis_dir, emoji, name=emoji['name'], return_old_content=True)
+        if old_emoji and (emoji['update_at'] <= old_emoji['update_at']):
+            skip_existing = True
+
+        image_loader = functools.partial(init.matter.get_custom_emoji_image, emoji['id'])
+        dump_image(emojis_dir, emoji['id'], image_loader, label=emoji['name'], skip_existing=skip_existing)
+    print()
 
 
 def create_zip_file(init):
@@ -598,7 +668,12 @@ def main():
             backup_team_channels(init)
 
         init.users.backup_all_users()
+
+        if not init.options.skip_emojis:
+            backup_custom_emojis(init)
+
         create_zip_file(init)
+
 
     except mattermost.ApiException as ex:
         print(f"Error accessing Mattermost: {ex}")
