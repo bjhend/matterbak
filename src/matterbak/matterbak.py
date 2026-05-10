@@ -15,7 +15,7 @@ from . import dump
 from .hashablematterdata import HashableMatterData
 from . import teams
 from . import users
-
+from . import channeldata
 
 
 # NOTE: You need to provide a fork of the mattermost package containing
@@ -31,7 +31,6 @@ teams_subdir = pl.Path('teams')
 groups_subdir = pl.Path('groups')
 direct_subdir = pl.Path('direct')
 emojis_subdir = pl.Path('emojis')
-files_subdir = pl.Path('files')
 
 
 
@@ -111,76 +110,6 @@ class Init:
         return matter
 
 
-
-def get_latest_post_id(posts_dir):
-    """Return latest ID of posts in posts_dir
-
-    This function assumes that the file names begin with a timestamps, such that
-    the latest post has the lexicographically highest name.
-
-    posts_dir: pathlib.Path of a dir with json files containing posts data
-
-    return: post ID contained in the file with the max file name or None
-    """
-    latest_post_file = posts_dir / ' '
-    for post_file in posts_dir.iterdir():
-        if post_file.suffix.lower() != '.json':
-            continue
-        if post_file.name > latest_post_file.name:
-            latest_post_file = post_file
-
-    if latest_post_file.exists():
-        with latest_post_file.open(encoding="utf8") as post_file:
-            post = json.load(post_file)
-            return post.get('id')
-
-    return None
-
-
-def backup_channel(init, name, channel, channels_dir):
-    """Download channel data and all its posts and files
-
-    init:         the Init instance
-    name:         name for the channel data file and its subdir
-    channel:      channel data
-    channels_dir: pathlib.Path with the dir to store the data in
-    """
-
-    posts_dir = channels_dir / dump.make_filename(channel['id'], name=name)
-    files_dir = posts_dir / files_subdir
-    files_dir.mkdir(parents=True, exist_ok=True)
-
-    dump.dump_content(channels_dir, channel, name=name)
-
-    members = init.users.get_group_members(channel)
-    dump.dump_content(channels_dir, members, id_=channel['id'], name=f"{name}{dump.filename_separator}members")
-
-    latest_id = get_latest_post_id(posts_dir)
-
-    num_posts = 0
-    num_files = 0
-    for post in init.matter.get_posts_for_channel(channel["id"], after=latest_id):
-        print('.', end='', flush=True)
-        dump.dump_content(posts_dir, post, with_timestamp=True)
-        num_posts += 1
-
-        for file_desc in post["metadata"].get("files", []):
-            file_id = file_desc["id"]
-            dump.dump_content(files_dir, file_desc)
-            file_respone = init.matter.get_file(file_id)
-            if file_respone.ok:
-                # extension is contained in name
-                file_dump_path = files_dir / dump.make_filename(file_id, name=file_desc['name'])
-                file_dump_path.write_bytes(file_respone.content)
-                num_files += 1
-            else:
-                print(f"Cannot retrieve the file '{file_desc['name']}' posted to channel '{name}': {file_respone.text}")
-    # Newline after progress dots
-    if num_posts > 0:
-        print()
-    return num_posts, num_files
-
-
 def backup_direct_channels(init):
     """Store data of configured direct channels
 
@@ -201,7 +130,8 @@ def backup_direct_channels(init):
         if channel_username in configured_direct_channels:
             print(f"Dumping direct channel with '{channel_username}'")
             channel_dir = init.options.data_dir / direct_subdir
-            num_posts, num_files = backup_channel(init, channel_username, dc, channel_dir)
+            channel_data = channeldata.Channel_Data(init, channel_username, dc, channel_dir)
+            num_posts, num_files = channel_data.backup()
             print(f"    dumped {num_posts} posts and {num_files} files")
             configured_direct_channels.discard(channel_username)
         else:
@@ -250,7 +180,8 @@ def backup_group_channels(init):
             name = dump.filename_separator.join(sorted(member_usernames))
             print(f"Dumping group channel with '{member_usernames}' as {name}")
             channel_dir = init.options.data_dir / groups_subdir
-            num_posts, num_files = backup_channel(init, name, gc, channel_dir)
+            channel_data = channeldata.Channel_Data(init, name, gc, channel_dir)
+            num_posts, num_files = channel_data.backup()
             print(f"    dumped {num_posts} posts and {num_files} files")
         else:
             print(f"Skip group channel with '{member_usernames}'")
@@ -322,7 +253,9 @@ def backup_team_channels(init):
         for channel in backup_team_channels:
             channel_dir = team_dir / f"{team['id']}{dump.filename_separator}{team_name}"
             print(f"    Dumping channel '{channel['display_name']}'")
-            num_posts, num_files = backup_channel(init, channel['name'], channel, channel_dir)
+
+            channel_data = channeldata.Channel_Data(init, channel['name'], channel, channel_dir)
+            num_posts, num_files = channel_data.backup()
             print(f"        dumped {num_posts} posts and {num_files} files")
 
         members = init.users.get_group_members(team)
