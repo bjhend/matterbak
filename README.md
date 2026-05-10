@@ -2,6 +2,8 @@
 
 Back up Mattermost channels of any type with all posts, threads, files, users, emojis.
 
+A note on **personal data**: This script can download personal data of the users like name, nickname, e-mail-address, picture, etc. This may cause legal problems. To avoid that, call the script with option `--skip-users`. You will still find user IDs in the data and which roles/permissions belong to them as channel members but no personal data about the users behind those IDs. The only exception are direct and group channels in the backup, which contain the usernames in the filenames.
+
 Mattermost knows several types of channels:
 
 * Direct channels contain a chat with a single user outside of a team
@@ -131,6 +133,7 @@ optional arguments:
   --skip-direct         skip direct channels
   --skip-groups         skip group channels
   --skip-teams          skip team channels
+  --skip-users          Skip storing personal user data (includes --skip-user-images)
   --skip-user-images    Skip storing user images
   --skip-emojis         Skip storing custom emojis
 ```

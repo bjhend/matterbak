@@ -95,6 +95,8 @@ class Init:
                             help="skip group channels")
         parser.add_argument("--skip-teams", action="store_true", default=False,
                             help="skip team channels")
+        parser.add_argument("--skip-users", action="store_true", default=False,
+                            help="Skip storing personal user data (includes --skip-user-images)")
         parser.add_argument("--skip-user-images", action="store_true", default=False,
                             help="Skip storing user images")
         parser.add_argument("--skip-emojis", action="store_true", default=False,

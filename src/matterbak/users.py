@@ -110,6 +110,9 @@ class Users:
     def backup_all_users(self):
         """Backup all user data in the users data subdir"""
 
+        if self._init.options.skip_users:
+            return
+
         # Get IDs of all team/channel members and the executing user themself
         member_user_ids = { self._init.calling_user_id }
         for members in self._group_members.values():
@@ -148,5 +151,6 @@ class Users:
                        label=f'{user["username"]}{dump.filename_separator}image',
                        skip_existing=skip_existing)
 
+        # Newline after progress dots
         print()
 
