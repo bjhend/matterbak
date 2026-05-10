@@ -1,16 +1,16 @@
 # matterbak
 
-Back up Mattermost channels of any type with all posts and files and their users.
+Back up Mattermost channels of any type with all posts, threads, files, users, emojis.
 
 Mattermost knows several types of channels:
 
 * Direct channels contain a chat with a single user outside of a team
-* Group channels contain a chat with a a group of users outside of a team
+* Group channels contain a chat with a multiple users outside of a team
 * Channels belonging to a team
 
 You can configure for each type which channels should be backed up.
 
-Subsequent runs of the script with the same data dir will only update the channels with new posts. So you can run it once to create an initial backup and later update that backup by running it again. If you later add more channels to the configuration those will be downloaded as well.
+Subsequent runs of the script with the same data dir will update the saved data. So you can run it once to create an initial backup and later update that backup by running it again. If you later add more channels to the configuration those will be downloaded as well. In case you have accidentally deleted part of the files of a channel, delete all channel files and update again. Otherwise updates may get broken.
 
 **Attention**: Updating will **skip** any changes to older posts. In that case you have to delete the changed post and *all* following posts from the channel dir. In case of doubt delete the entire channel dir.
 
@@ -20,7 +20,8 @@ Subsequent runs of the script with the same data dir will only update the channe
 The script should work with Python 3.8 or later.
 The [mattermost module](https://github.com/someone-somenet-org/mattermost-python-api) is needed for easier API access.
 
-**Note** that we require a version with the additional function `get_teams_for_user` and an extended function `get_posts_for_channel`. There are a currently open [pull requests](https://github.com/someone-somenet-org/mattermost-python-api/issues?q=is%3Aopen%20is%3Apr%20author%3A%40bjhend) to add these to the package. Until the pull requests are executed you may use the [`development` branch](https://github.com/bjhend/mattermost-python-api/tree/development) of [this repo](https://github.com/bjhend/mattermost-python-api) containing the changes of both pull requests.
+**Note** that we require a version of the mattermost module with additional functions. For some of the additions there are already open [pull requests](https://github.com/someone-somenet-org/mattermost-python-api/issues?q=is%3Aopen%20is%3Apr%20author%3A%40bjhend) to add these to the package.
+Until all changes are added to the original mattermost module you have to  use the [`development` branch](https://github.com/bjhend/mattermost-python-api/tree/development) of [this fork](https://github.com/bjhend/mattermost-python-api) containing all required additions.
 
 If you call the script with `uv run` or `poetry run` the required version of the `mattermost` package will be used.
 
@@ -116,6 +117,7 @@ Execute matterbak with option `--help` to see the actual command line options:
 
 ```
 usage: matterbak [-h] [--credentials CREDENTIALS] [--channels CHANNELS] [-d DATA_DIR] [-o OUTPUT_ZIP] [--skip-direct] [--skip-groups] [--skip-teams]
+                 [--skip-user-images] [--skip-emojis]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -129,16 +131,29 @@ optional arguments:
   --skip-direct         skip direct channels
   --skip-groups         skip group channels
   --skip-teams          skip team channels
+  --skip-user-images    Skip storing user images
+  --skip-emojis         Skip storing custom emojis
 ```
+
+The skip options avoid to download the respective data. This may save time if you do not need such data or know that there are no new data of that type on update. You may rerun without the skip option at any time to download that data as well. So we recommend to skip any type of data except one on the first try.
 
 
 ## Running
 
 We recommend to use `uv` or `poetry` to run the script. Otherwise install the dependencies defined in `pyproject.toml`, see section [Requirements](#Requirements) above.
 
-The script creates up to four folders under the given *data-dir*: `teams`, `direct`, `groups`, and `users` with the respective channel or user data received from Mattermost.
+The script creates folders under the given *data-dir* for the respective types of data and updates their content on subsequent runs. Finally all data in the *data-dir* is stored in the *output-zip* file.
 
-Finally all data in the *data-dir* is stored in the *output-zip* file.
+
+## Data
+
+Every Mattermost object has a unique ID. This is always part of the name of the respective file. So if one data file reference other data by ID you may easily find the referenced data.
+
+Some files contain binary data. Those are files that were attached to a post as well as images (user images, team icons, custom emojis). These files contain the ID of the object they belong to in their namse.
+
+Team and channel members are stored in a special file, containing a list with all team/channel member objects.
+
+A special case are threads. Threads are not Mattermost objects. To store the threads any channel data directory contains a threads file with a list of threads. Each thread is a list of post IDs belonging to the same thread. Don't mess up with this file. It will be updated on each run, which may fail if the file is corrupted.
 
 
 ## Notes
