@@ -296,7 +296,8 @@ def create_zip_file(init):
     print("\n---CREATE ZIP FILE---")
     with zipfile.ZipFile(init.options.output_zip, "w") as zipf:
         for f in init.options.data_dir.glob('**/*'):
-            zipf.write(f)
+            f_without_data_dir = f.relative_to(init.options.data_dir)
+            zipf.write(f, arcname=f_without_data_dir)
 
 
 def main():
