@@ -89,6 +89,8 @@ class Init:
                             help="Dir to store downloaded data in, absolute or relative to current dir, default = %(default)s")
         parser.add_argument("-o", "--output-zip", type=pl.Path, default=None,
                             help="zip file to write, default is 'matterbak_<user>.zip'")
+        parser.add_argument("--update-old-posts", action="store_true", default=False,
+                            help="Update also old posts in case they changed since last update")
         parser.add_argument("--skip-direct", action="store_true", default=False,
                             help="skip direct channels")
         parser.add_argument("--skip-groups", action="store_true", default=False,

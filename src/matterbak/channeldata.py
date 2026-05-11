@@ -125,16 +125,23 @@ class Channel_Data:
         members = self.init.users.get_group_members(self.channel)
         dump.dump_content(self.channels_dir, members, id_=self.channel_id, name=f"{self.name}{dump.filename_separator}members")
 
-        latest_id = self._get_latest_post_id()
+        if self.init.options.update_old_posts:
+            latest_id = None
+        else:
+            latest_id = self._get_latest_post_id()
 
         num_posts = 0
         num_files = 0
         for post in self.init.matter.get_posts_for_channel(self.channel_id, after=latest_id):
-            print('.', end='', flush=True)
-            dump.dump_content(self.posts_dir, post, with_timestamp=True)
-            num_posts += 1
-            num_files += self._save_post(post)
-            self._update_threads(post['id'])
+            old_content = dump.dump_content(self.posts_dir, post, with_timestamp=True, return_old_content=True)
+            if (not old_content) or (old_content['update_at'] < post['update_at']):
+                print('.', end='', flush=True)
+                num_posts += 1
+                num_files += self._save_post(post)
+                if not old_content:
+                    # We assume the thread a post belongs to cannot be changed
+                    # so we only update threads if the post is entirely new
+                    self._update_threads(post['id'])
 
         # Newline after progress dots
         if num_posts > 0:

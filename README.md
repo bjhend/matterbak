@@ -14,7 +14,7 @@ You can configure for each type which channels should be backed up.
 
 Subsequent runs of the script with the same data dir will update the saved data. So you can run it once to create an initial backup and later update that backup by running it again. If you later add more channels to the configuration those will be downloaded as well. In case you have accidentally deleted part of the files of a channel, delete all channel files and update again. Otherwise updates may get broken.
 
-**Attention**: Updating will **skip** any changes to older posts. In that case you have to delete the changed post and *all* following posts from the channel dir. In case of doubt delete the entire channel dir.
+**Attention**: Updating will skip any changes to older posts unless you give option `--update-old-posts`.
 
 
 ## Requirements
@@ -130,6 +130,7 @@ optional arguments:
                         Dir to store downloaded data in, absolute or relative to current dir, default = data
   -o OUTPUT_ZIP, --output-zip OUTPUT_ZIP
                         zip file to write, default is 'matterbak_<user>.zip'
+  --update-old-posts    Update also old posts in case they changed since last update
   --skip-direct         skip direct channels
   --skip-groups         skip group channels
   --skip-teams          skip team channels
