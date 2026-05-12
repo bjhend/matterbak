@@ -148,6 +148,42 @@ We recommend to use `uv` or `poetry` to run the script. Otherwise install the de
 
 The script creates folders under the given *data-dir* for the respective types of data and updates their content on subsequent runs. Finally all data in the *data-dir* is stored in the *output-zip* file.
 
+## Running
+
+We recommend to use `uv` or `poetry` to run the script. Otherwise install the dependencies manually.
+
+### Install with uv/poetry
+
+If you are already using uv or poetry for other projects:
+
+```sh
+# With uv
+uv run matterbak
+
+# With poetry
+poetry run matterbak
+```
+
+### Install with pipx
+
+`pipx` is the best way to install this tool as it creates an isolated environment automatically, avoiding the need for manual virtual environments.
+
+```sh
+# Install the tool directly from GitHub
+pipx install "git+https://github.com/michael-behrisch/matterbak.git"
+pipx install "git+https://github.com/bjhend/matterbak.git"
+
+# Run the tool
+matterbak --help
+```
+
+### Install with pip (for development)
+
+```
+git clone https://github.com/michael-behrisch/matterbak.git
+cd matterbak
+pip install -e .
+```
 
 ## Data
 

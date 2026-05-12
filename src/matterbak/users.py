@@ -59,6 +59,7 @@ class Users:
         """
         try:
             if user_ids:
+                self._init.rate_limiter.wait()
                 for user in self._init.matter.get_users_by_ids_list(list(user_ids)):
                     self._user_data[user['id']] = HashableMatterData(user)
 
@@ -133,6 +134,7 @@ class Users:
         all_user_ids = member_user_ids | known_user_ids
         for user_id in all_user_ids:
             print('.', end='', flush=True)
+            self._init.rate_limiter.wait()
             user = self.get_user_data(user_id)
             old_user_data = dump.dump_content(users_dir, user, name=user["username"], return_old_content=True)
 
