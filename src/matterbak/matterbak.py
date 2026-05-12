@@ -132,13 +132,13 @@ class Init:
                             help="Skip storing custom emojis")
         parser.add_argument(
             "--rate-limit", type=float, default=10,
-            help="Max API calls per second. Default: 10. Set to 0 to disable.")
+            help="Max API calls per second. Default: %(default)s. Set to 0 to disable.")
         parser.add_argument(
             "--initial-jitter", type=float, default=0,
-            help="Random delay in seconds at script start. Default: 0.")
+            help="Random delay in seconds at script start. Default: %(default)s.")
         parser.add_argument(
             "--step-jitter", type=float, default=0,
-            help="Random delay in seconds between each backup unit. Default: 0.")
+            help="Random delay in seconds between each backup unit. Default: %(default)s.")
         return parser.parse_args()
 
     def _get_mattermost_api(self, creds):

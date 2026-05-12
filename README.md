@@ -137,20 +137,25 @@ optional arguments:
   --skip-users          Skip storing personal user data (includes --skip-user-images)
   --skip-user-images    Skip storing user images
   --skip-emojis         Skip storing custom emojis
+  --rate-limit RATE_LIMIT
+                        Max API calls per second. Default: 10. Set to 0 to disable.
+  --initial-jitter INITIAL_JITTER
+                        Random delay in seconds at script start. Default: 0.
+  --step-jitter STEP_JITTER
+                        Random delay in seconds between each backup unit. Default: 0.
+
 ```
+
+The script creates folders under the given `--data-dir` for the respective types of data and updates their content on subsequent runs. Finally all data in the *data-dir* is stored in the `--output-zip` file.
 
 The skip options avoid to download the respective data. This may save time if you do not need such data or know that there are no new data of that type on update. You may rerun without the skip option at any time to download that data as well. So we recommend to skip any type of data except one on the first try.
 
+The rate limit and jitter options limit the download rate to avoid overloading the server. Set to sensible values to be fair to the server operator and other users.
+
 
 ## Running
 
-We recommend to use `uv` or `poetry` to run the script. Otherwise install the dependencies defined in `pyproject.toml`, see section [Requirements](#Requirements) above.
-
-The script creates folders under the given *data-dir* for the respective types of data and updates their content on subsequent runs. Finally all data in the *data-dir* is stored in the *output-zip* file.
-
-## Running
-
-We recommend to use `uv` or `poetry` to run the script. Otherwise install the dependencies manually.
+We recommend to use `uv` or `poetry` to run the script. Otherwise install the dependencies defined in `pyproject.toml` manually, see section [Requirements](#Requirements) above.
 
 ### Install with uv/poetry
 
@@ -187,13 +192,13 @@ pip install -e .
 
 ## Data
 
-Every Mattermost object has a unique ID. This is always part of the name of the respective file. So if one data file reference other data by ID you may easily find the referenced data.
+Every Mattermost object has a unique ID. This is always part of the name of the respective file. So if one data file references other data by ID you may easily find the referenced data.
 
 Some files contain binary data. Those are files that were attached to a post as well as images (user images, team icons, custom emojis). These files contain the ID of the object they belong to in their namse.
 
 Team and channel members are stored in a special file, containing a list with all team/channel member objects.
 
-A special case are threads. Threads are not Mattermost objects. To store the threads any channel data directory contains a threads file with a list of threads. Each thread is a list of post IDs belonging to the same thread. Don't mess up with this file. It will be updated on each run, which may fail if the file is corrupted.
+A special case are threads. Threads are not Mattermost objects. To store the threads, any channel data directory contains a threads file with a list of threads. Each thread is a list of post IDs belonging to the same thread. Don't mess up with this file. It will be updated on each run, which may fail if the file is corrupted.
 
 
 ## Notes
