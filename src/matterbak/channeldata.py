@@ -6,6 +6,7 @@ Provide class Channel_Data
 
 import pathlib as pl
 import json
+import time
 from . import dump
 
 
@@ -133,6 +134,7 @@ class Channel_Data:
         num_posts = 0
         num_files = 0
         for post in self.init.matter.get_posts_for_channel(self.channel_id, after=latest_id):
+            self.init.rate_limiter.wait()
             old_content = dump.dump_content(self.posts_dir, post, with_timestamp=True, return_old_content=True)
             if (not old_content) or (old_content['update_at'] < post['update_at']):
                 print('.', end='', flush=True)

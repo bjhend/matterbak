@@ -10,6 +10,8 @@ import zipfile
 import pprint
 import pathlib as pl
 import functools
+import time
+import random
 
 from . import dump
 from .hashablematterdata import HashableMatterData
@@ -32,7 +34,22 @@ groups_subdir = pl.Path('groups')
 direct_subdir = pl.Path('direct')
 emojis_subdir = pl.Path('emojis')
 
+class RateLimiter:
+    """Simple rate limiter to control API call frequency."""
+    def __init__(self, calls_per_second=10):
+        if calls_per_second <= 0:
+            self.interval = 0
+        else:
+            self.interval = 1.0 / calls_per_second
+        self.last_call_time = 0.0
 
+    def wait(self):
+        """Wait if the rate limit is reached."""
+        now = time.time()
+        if now - self.last_call_time < self.interval:
+            sleep_time = self.interval - (now - self.last_call_time)
+            time.sleep(sleep_time)
+        self.last_call_time = now
 
 
 class Init:
@@ -61,12 +78,22 @@ class Init:
 
             self.matter = self._get_mattermost_api(creds)
 
+            # Initialize RateLimiter using command line argument
+            self.rate_limiter = RateLimiter(
+                calls_per_second=self.options.rate_limit)
+
             if self.options.output_zip is None:
                 self.options.output_zip = pl.Path(f'matterbak_{self.calling_username}.zip')
 
             with open(self.options.channels, encoding="utf8") as channels_config_file:
                 self.channels_config = json.load(channels_config_file)
             print(f"channels config:\n{pprint.pformat(self.channels_config)}")
+            # Apply initial random sleep to avoid
+            # for example simultaneous cron job starts
+            if self.options.initial_jitter > 0:
+                delay = random.uniform(0, self.options.initial_jitter)
+                print(f"Initial random jitter: sleeping for {delay:.2f}s")
+                time.sleep(delay)
 
         except json.JSONDecodeError as ex:
             print(f"JSON structure of a config file broken (note that a common cause for a "
@@ -103,6 +130,15 @@ class Init:
                             help="Skip storing user images")
         parser.add_argument("--skip-emojis", action="store_true", default=False,
                             help="Skip storing custom emojis")
+        parser.add_argument(
+            "--rate-limit", type=float, default=10,
+            help="Max API calls per second. Default: 10. Set to 0 to disable.")
+        parser.add_argument(
+            "--initial-jitter", type=float, default=0,
+            help="Random delay in seconds at script start. Default: 0.")
+        parser.add_argument(
+            "--step-jitter", type=float, default=0,
+            help="Random delay in seconds between each backup unit. Default: 0.")
         return parser.parse_args()
 
     def _get_mattermost_api(self, creds):
@@ -308,17 +344,32 @@ def main():
 
         if not init.options.skip_direct:
             backup_direct_channels(init)
+            # optional sleep
+            if init.options.step_jitter > 0:
+                time.sleep(random.uniform(0, init.options.step_jitter))
 
         if not init.options.skip_groups:
             backup_group_channels(init)
+            # optional sleep
+            if init.options.step_jitter > 0:
+                time.sleep(random.uniform(0, init.options.step_jitter))
 
         if not init.options.skip_teams:
             backup_team_channels(init)
+            # optional sleep
+            if init.options.step_jitter > 0:
+                time.sleep(random.uniform(0, init.options.step_jitter))
 
         init.users.backup_all_users()
+        # optional sleep
+        if init.options.step_jitter > 0:
+            time.sleep(random.uniform(0, init.options.step_jitter))
 
         if not init.options.skip_emojis:
             backup_custom_emojis(init)
+            # optional sleep
+            if init.options.step_jitter > 0:
+                time.sleep(random.uniform(0, init.options.step_jitter))
 
         create_zip_file(init)
 
