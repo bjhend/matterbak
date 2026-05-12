@@ -106,9 +106,6 @@ class Init:
             with open(self.options.channels, encoding="utf8") as channels_config_file:
                 self.channels_config = json.load(channels_config_file)
             print(f"channels config:\n{pprint.pformat(self.channels_config)}")
-            # Apply initial random sleep to avoid
-            # for example simultaneous cron job starts
-            self.rate_limiter.wait_jitter(initial=True)
 
         except json.JSONDecodeError as ex:
             print(f"JSON structure of a config file broken (note that a common cause for a "
@@ -357,6 +354,10 @@ def main():
 
     try:
         init = Init()
+
+        # Apply initial random sleep to avoid
+        # for example simultaneous cron job starts
+        init.rate_limiter.wait_jitter(initial=True)
 
         if not init.options.skip_direct:
             backup_direct_channels(init)
