@@ -34,14 +34,19 @@ groups_subdir = pl.Path('groups')
 direct_subdir = pl.Path('direct')
 emojis_subdir = pl.Path('emojis')
 
+
+
 class RateLimiter:
     """Simple rate limiter to control API call frequency."""
-    def __init__(self, calls_per_second=10):
+    def __init__(self, calls_per_second, initial_jitter, step_jitter):
         if calls_per_second <= 0:
             self.interval = 0
         else:
             self.interval = 1.0 / calls_per_second
         self.last_call_time = 0.0
+
+        self.initial_jitter = initial_jitter
+        self.step_jitter = step_jitter
 
     def wait(self):
         """Wait if the rate limit is reached."""
@@ -50,6 +55,16 @@ class RateLimiter:
             sleep_time = self.interval - (now - self.last_call_time)
             time.sleep(sleep_time)
         self.last_call_time = now
+
+    def wait_jitter(self, initial=False):
+        """Wait random initial or step jitter time"""
+        jitter = self.initial_jitter if initial else self.step_jitter
+        if jitter > 0:
+            delay = random.uniform(0, jitter)
+            label = "Initial" if initial else "Step"
+            print(f"{label} random jitter: sleeping for {delay:.2f}s")
+            time.sleep(delay)
+
 
 
 class Init:
@@ -80,7 +95,10 @@ class Init:
 
             # Initialize RateLimiter using command line argument
             self.rate_limiter = RateLimiter(
-                calls_per_second=self.options.rate_limit)
+                calls_per_second=self.options.rate_limit,
+                initial_jitter=self.options.initial_jitter,
+                step_jitter=self.options.step_jitter
+            )
 
             if self.options.output_zip is None:
                 self.options.output_zip = pl.Path(f'matterbak_{self.calling_username}.zip')
@@ -90,10 +108,7 @@ class Init:
             print(f"channels config:\n{pprint.pformat(self.channels_config)}")
             # Apply initial random sleep to avoid
             # for example simultaneous cron job starts
-            if self.options.initial_jitter > 0:
-                delay = random.uniform(0, self.options.initial_jitter)
-                print(f"Initial random jitter: sleeping for {delay:.2f}s")
-                time.sleep(delay)
+            self.rate_limiter.wait_jitter(initial=True)
 
         except json.JSONDecodeError as ex:
             print(f"JSON structure of a config file broken (note that a common cause for a "
@@ -346,31 +361,26 @@ def main():
         if not init.options.skip_direct:
             backup_direct_channels(init)
             # optional sleep
-            if init.options.step_jitter > 0:
-                time.sleep(random.uniform(0, init.options.step_jitter))
+            init.rate_limiter.wait_jitter()
 
         if not init.options.skip_groups:
             backup_group_channels(init)
             # optional sleep
-            if init.options.step_jitter > 0:
-                time.sleep(random.uniform(0, init.options.step_jitter))
+            init.rate_limiter.wait_jitter()
 
         if not init.options.skip_teams:
             backup_team_channels(init)
             # optional sleep
-            if init.options.step_jitter > 0:
-                time.sleep(random.uniform(0, init.options.step_jitter))
+            init.rate_limiter.wait_jitter()
 
         init.users.backup_all_users()
         # optional sleep
-        if init.options.step_jitter > 0:
-            time.sleep(random.uniform(0, init.options.step_jitter))
+        init.rate_limiter.wait_jitter()
 
         if not init.options.skip_emojis:
             backup_custom_emojis(init)
             # optional sleep
-            if init.options.step_jitter > 0:
-                time.sleep(random.uniform(0, init.options.step_jitter))
+            init.rate_limiter.wait_jitter()
 
         create_zip_file(init)
 
