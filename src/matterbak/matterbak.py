@@ -314,6 +314,7 @@ def backup_custom_emojis(init):
     emojis_dir.mkdir(parents=True, exist_ok=True)
 
     for emoji in init.matter.get_list_of_custom_emojis():
+        init.rate_limiter.wait()
         print('.', end='', flush=True)
 
         skip_existing = False
