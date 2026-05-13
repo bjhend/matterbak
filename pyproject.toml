@@ -11,6 +11,7 @@ readme = "README.md"
 authors = [
     { name="Michael Behrisch", email="oss@behrisch.de" },
     { name="Björn Hendriks", email="bjoern.hendriks@dlr.de" },
+    { name="Daniel Mohr", email="daniel.mohr@dlr.de" },
 ]
 
 
