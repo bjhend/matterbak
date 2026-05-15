@@ -30,7 +30,7 @@ class Channel_Data:
         self.channel = channel
         self.channel_id = self.channel['id']
         self.channels_dir = channels_dir
-        self._threads_filename = f"{self.name}{dump.filename_separator}threads"
+        self._threads_filename = f"{self.name}{dump.filename_separator}{dump.suffix_threads}"
         self.posts_dir = self.channels_dir / dump.make_filename(self.channel_id, name=self.name)
         self.files_dir = self.posts_dir / files_subdir
         self.files_dir.mkdir(parents=True, exist_ok=True)
@@ -48,7 +48,7 @@ class Channel_Data:
         """
         latest_post_file = self.posts_dir / ' '
         for post_file in self.posts_dir.iterdir():
-            if post_file.suffix.lower() != '.json':
+            if post_file.suffix.lower() != dump.json_extension:
                 continue
             if post_file.name > latest_post_file.name:
                 latest_post_file = post_file
@@ -63,7 +63,7 @@ class Channel_Data:
     def _load_threads(self):
         """Load thread data from backup"""
         self._threads = {}
-        threads_path = self.channels_dir / dump.make_filename(self.channel_id, name=self._threads_filename, extension='.json')
+        threads_path = self.channels_dir / dump.make_filename(self.channel_id, name=self._threads_filename, extension=dump.json_extension)
         if threads_path.is_file():
             with threads_path.open(encoding="utf8") as threads_file:
                 threads_json = json.load(threads_file)
@@ -103,7 +103,7 @@ class Channel_Data:
         dump.dump_content(self.channels_dir, self.channel, name=self.name)
 
         members = self.init.users.get_group_members(self.channel)
-        dump.dump_content(self.channels_dir, members, id_=self.channel_id, name=f"{self.name}{dump.filename_separator}members")
+        dump.dump_content(self.channels_dir, members, id_=self.channel_id, name=f"{self.name}{dump.filename_separator}{dump.suffix_members}")
 
         if self.init.options.update_old_posts:
             latest_id = None

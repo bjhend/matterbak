@@ -14,8 +14,6 @@ from . import dump
 from .hashablematterdata import HashableMatterData
 
 
-users_subdir = pl.Path('users')
-
 
 
 class Users:
@@ -127,7 +125,7 @@ class Users:
         self._update_user_data_recursion(unknown_user_ids)
 
         # Create data dir
-        users_dir = self._init.options.data_dir / users_subdir
+        users_dir = self._init.options.data_dir / dump.users_subdir
         users_dir.mkdir(parents=True, exist_ok=True)
 
         # Dump all user data
@@ -150,7 +148,7 @@ class Users:
 
             image_loader = functools.partial(self._init.matter.get_user_profile_image, user_id)
             dump.dump_image(users_dir, user_id, image_loader,
-                       label=f'{user["username"]}{dump.filename_separator}image',
+                       label=f'{user["username"]}{dump.filename_separator}{dump.suffix_image}',
                        skip_existing=skip_existing)
 
         # Newline after progress dots

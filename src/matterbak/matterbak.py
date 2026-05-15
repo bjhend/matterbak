@@ -29,11 +29,6 @@ import mattermost
 
 
 default_data_dir = pl.Path('data')
-# Subdirs below data_dir to store the related downloads
-teams_subdir = pl.Path('teams')
-groups_subdir = pl.Path('groups')
-direct_subdir = pl.Path('direct')
-emojis_subdir = pl.Path('emojis')
 
 
 
@@ -184,7 +179,7 @@ def backup_direct_channels(init):
         if channel_username in configured_direct_channels:
             print("Dumping direct channel with "
                   f"{json.dumps(channel_username)}")
-            channel_dir = init.options.data_dir / direct_subdir
+            channel_dir = init.options.data_dir / dump.direct_subdir
             channel_data = channeldata.Channel_Data(init, channel_username, dc, channel_dir)
             num_posts, num_files = channel_data.backup()
             print(f"    dumped {num_posts} posts and {num_files} files")
@@ -237,7 +232,7 @@ def backup_group_channels(init):
             name = dump.filename_separator.join(sorted_member_usernames)
             print("Dumping group channel with "
                   f"{json.dumps(sorted_member_usernames)} as {name}")
-            channel_dir = init.options.data_dir / groups_subdir
+            channel_dir = init.options.data_dir / dump.groups_subdir
             channel_data = channeldata.Channel_Data(init, name, gc, channel_dir)
             num_posts, num_files = channel_data.backup()
             print(f"    dumped {num_posts} posts and {num_files} files")
@@ -306,12 +301,12 @@ def backup_team_channels(init):
         print_channels(backup_team_channels, "to backup")
         print_channels(team_channels - backup_team_channels, "skipped from backup")
 
-        team_dir = init.options.data_dir / teams_subdir
+        team_dir = init.options.data_dir / dump.teams_subdir
         team_dir.mkdir(parents=True, exist_ok=True)
         dump.dump_content(team_dir, team, name=team_name)
 
         icon_loader = functools.partial(init.matter.get_team_icon, team['id'])
-        dump.dump_image(team_dir, team['id'], icon_loader, 'icon')
+        dump.dump_image(team_dir, team['id'], icon_loader, dump.suffix_icon)
 
         for channel in backup_team_channels:
             channel_dir = team_dir / f"{team['id']}{dump.filename_separator}{team_name}"
@@ -322,7 +317,7 @@ def backup_team_channels(init):
             print(f"        dumped {num_posts} posts and {num_files} files")
 
         members = init.users.get_group_members(team)
-        dump.dump_content(team_dir, members, id_=team['id'], name=f"{team_name}{dump.filename_separator}members")
+        dump.dump_content(team_dir, members, id_=team['id'], name=f"{team_name}{dump.filename_separator}{dump.suffix_members}")
 
 
 def backup_custom_emojis(init):
@@ -333,7 +328,7 @@ def backup_custom_emojis(init):
 
     print("\n---CUSTOM EMOJIS---")
 
-    emojis_dir = init.options.data_dir / emojis_subdir
+    emojis_dir = init.options.data_dir / dump.emojis_subdir
     emojis_dir.mkdir(parents=True, exist_ok=True)
 
     for emoji in init.matter.get_list_of_custom_emojis():

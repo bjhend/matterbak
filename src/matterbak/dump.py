@@ -6,14 +6,30 @@ Provide functions to dump data into JSON files
 import datetime
 import json
 import signal
+import pathlib as pl
 
 from .ignoresignals import IgnoreSignals
 
 
+json_extension = '.json'
 # Separator between parts of a filename
 filename_separator = '__'
 # Format for timestamps in file names
 timestamp_format = "%Y%m%d-%H%M%S%f"
+
+# Subdirs below data_dir to store the related downloads
+teams_subdir = pl.Path('teams')
+groups_subdir = pl.Path('groups')
+direct_subdir = pl.Path('direct')
+emojis_subdir = pl.Path('emojis')
+users_subdir = pl.Path('users')
+files_subdir = pl.Path('files')
+
+# Suffixes for types of data files
+suffix_members = 'members'
+suffix_threads = 'threads'
+suffix_icon = 'icon'
+suffix_image = 'image'
 
 
 def make_filename(id_, name=None, extension='', mm_timestamp=None):
@@ -50,7 +66,7 @@ def dump_image(dir, id_, image_loader, label=None, skip_existing=False):
     skip_existing: if True skip download if image file already exists
     """
 
-    found_image_files = [ f for f in dir.glob(id_+'*') if f.suffix != '.json' and f.is_file() ]
+    found_image_files = [ f for f in dir.glob(id_+'*') if f.suffix != json_extension and f.is_file() ]
     if skip_existing and found_image_files:
         return
 
@@ -95,7 +111,7 @@ def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return
         id_ = content['id']
     mm_timestamp = content["create_at"] if with_timestamp else None
 
-    path = dir / make_filename(id_, name=name, extension='.json', mm_timestamp=mm_timestamp)
+    path = dir / make_filename(id_, name=name, extension=json_extension, mm_timestamp=mm_timestamp)
 
     old_content = None
     if return_old_content and path.is_file():
