@@ -5,14 +5,15 @@ Provide functions to dump data into JSON files
 
 import datetime
 import json
+import signal
 
+from .ignoresignals import IgnoreSignals
 
 
 # Separator between parts of a filename
 filename_separator = '__'
 # Format for timestamps in file names
 timestamp_format = "%Y%m%d-%H%M%S%f"
-
 
 
 def make_filename(id_, name=None, extension='', mm_timestamp=None):
@@ -69,8 +70,10 @@ def dump_image(dir, id_, image_loader, label=None, skip_existing=False):
         return
     extension = '.' + content_type.removeprefix(content_type_prefix)
 
+    ignore_signals = IgnoreSignals([signal.SIGINT, signal.SIGTERM])
     path = dir / make_filename(id_=id_, name=label, extension=extension)
     path.write_bytes(response.content)
+    ignore_signals.revert()
 
 
 def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return_old_content=False):
@@ -100,8 +103,10 @@ def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return
         with path.open(encoding="utf8") as old_file:
             old_content = json.load(old_file)
 
+    ignore_signals = IgnoreSignals([signal.SIGINT, signal.SIGTERM])
     with path.open(mode="w", encoding="utf8") as dump_file:
         json.dump(content, dump_file)
+    ignore_signals.revert()
 
     return old_content
 
