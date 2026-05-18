@@ -238,7 +238,7 @@ def backup_group_channels(init):
         if is_backup_group_channel(member_usernames, init.channels_config):
             name = dump.filename_separator.join(sorted(member_usernames))
             print("Dumping group channel with "
-                  f"{json.dumps(member_usernames)} as {name}")
+                  f"{json.dumps(sorted(member_usernames))} as {name}")
             channel_dir = init.options.data_dir / groups_subdir
             channel_data = channeldata.Channel_Data(init, name, gc, channel_dir)
             num_posts, num_files = channel_data.backup()
@@ -289,10 +289,11 @@ def backup_team_channels(init):
 
     print("\n---TEAM CHANNELS---")
     for team_name, team_config in init.channels_config.get('teams', {}).items():
-        print(f"\nTeam '{team_name}'")
+        print(f"\nTeam {json.dumps(team_name)}")
         team = init.teams.get_team_by_name(team_name)
         if not team:
-            print(f"    User \'{init.calling_username}\' does not have access to team \'{team_name}\'. Skipping team.")
+            print(f"    User \'{init.calling_username}\' does not have access "
+                  f"to team {json.dumps(team_name)}. Skipping team.")
             continue
 
         team_channels = init.teams.get_team_channels(team)
@@ -316,7 +317,7 @@ def backup_team_channels(init):
 
         for channel in backup_team_channels:
             channel_dir = team_dir / f"{team['id']}{dump.filename_separator}{team_name}"
-            print(f"    Dumping channel '{channel['display_name']}'")
+            print(f"    Dumping channel {json.dumps(channel['display_name'])}")
 
             channel_data = channeldata.Channel_Data(init, channel['name'], channel, channel_dir)
             num_posts, num_files = channel_data.backup()
