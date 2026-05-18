@@ -1,7 +1,7 @@
 [project]
 name = "matterbak"
 description = "Backing up mattermost channels (including files) and users"
-version = "0.3.0"
+version = "0.3.1"
 requires-python = ">= 3.8"
 dependencies = [
     # mattermost lacks a required endpoint so we get it from a fork not yet merged
@@ -22,4 +22,3 @@ matterbak = "matterbak:main"
 [build-system]
 requires = [ "setuptools>=42" ]
 build-backend = "setuptools.build_meta"
-
