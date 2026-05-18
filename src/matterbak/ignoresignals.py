@@ -10,7 +10,7 @@ import signal
 class IgnoreSignals():
     def __init__(
             self, signals, print_message_on_signal=None, ignore_on_init=True,
-            call_default_handler_after_revert=True):
+            delay_signals=True):
         """
         Temporarily ignore specified signals (e.g., Ctrl+C, kill) during
         critical operations.
@@ -35,7 +35,7 @@ class IgnoreSignals():
               the variable print_message_on_signal is printed.
             * Otherwise (e. g. False or '') no output.
         ignore_on_init (bool): to ignore signals immediately after creation
-        call_default_handler_after_revert:
+        delay_signals:
             If True the default handler will be called just after reverting
 
         return: dict with actual handlers
@@ -44,9 +44,8 @@ class IgnoreSignals():
         self.print_message_on_signal = print_message_on_signal
         self.default_handlers = []
         self.update_default_handlers()
-        self.handler_ignored = None
-        self.call_default_handler_after_revert = \
-            call_default_handler_after_revert
+        self.ignored_signum = None
+        self.delay_signals = delay_signals
 
         if ignore_on_init:
             self.ignore()
@@ -76,16 +75,16 @@ class IgnoreSignals():
         """
         for (sig, handler) in self.default_handlers:
             signal.signal(sig, handler)
-        if self.handler_ignored is not None:
-            os.kill(os.getpid(), self.handler_ignored)
-            self.handler_ignored = None
+        if self.delay_signals and (self.ignored_signum is not None):
+            os.kill(os.getpid(), self.ignored_signum)
+            self.ignored_signum = None
 
     def ignoring_handler(self, signum, frame):
         """
         handler that ignores the signal and optionally prints a message
         or calls a function
         """
-        self.handler_ignored = signum
+        self.ignored_signum = signum
         if self.print_message_on_signal is None:
             print(f'ignoring signal {signum} until write is finished')
         if callable(self.print_message_on_signal):
