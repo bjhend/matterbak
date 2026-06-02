@@ -108,9 +108,6 @@ class Init:
             # print(f"channels config:\n{pprint.pformat(self.channels_config)}")
             print("channels config:\n"
                   f"{json.dumps(self.channels_config, indent=2)}")
-            # Apply initial random sleep to avoid
-            # for example simultaneous cron job starts
-            self.rate_limiter.wait_jitter(initial=True)
 
         except json.JSONDecodeError as ex:
             print(f"JSON structure of a config file broken (note that a common cause for a "
@@ -236,16 +233,17 @@ def backup_group_channels(init):
     for gc in all_group_channels:
         member_usernames = init.users.get_other_channel_member_names(gc)
         if is_backup_group_channel(member_usernames, init.channels_config):
-            name = dump.filename_separator.join(sorted(member_usernames))
+            sorted_member_usernames = sorted(member_usernames)
+            name = dump.filename_separator.join(sorted_member_usernames)
             print("Dumping group channel with "
-                  f"{json.dumps(sorted(member_usernames))} as {name}")
+                  f"{json.dumps(sorted_member_usernames)} as {name}")
             channel_dir = init.options.data_dir / groups_subdir
             channel_data = channeldata.Channel_Data(init, name, gc, channel_dir)
             num_posts, num_files = channel_data.backup()
             print(f"    dumped {num_posts} posts and {num_files} files")
         else:
             print("Skip group channel with "
-                  f"{json.dumps(sorted(member_usernames))}")
+                  f"{json.dumps(sorted_member_usernames)}")
 
 
 def select_channels_by_names(all_channels, team_config, names_key):
@@ -263,7 +261,7 @@ def select_channels_by_names(all_channels, team_config, names_key):
     final_channel_names = { c['name'] for c in channels }
     missing_channel_names = names - final_channel_display_names - final_channel_names
     if missing_channel_names:
-        print("    Not found {names_key} channel names: "
+        print(f"    Not found {names_key} channel names: "
               f"{json.dumps(sorted(missing_channel_names))}")
     return channels
 
@@ -367,6 +365,10 @@ def main():
 
     try:
         init = Init()
+
+        # Apply initial random sleep to avoid
+        # for example simultaneous cron job starts
+        init.rate_limiter.wait_jitter(initial=True)
 
         if not init.options.skip_direct:
             backup_direct_channels(init)
