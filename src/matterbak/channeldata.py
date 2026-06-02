@@ -135,19 +135,20 @@ class Channel_Data:
         num_files = 0
         for post in self.init.matter.get_posts_for_channel(self.channel_id, after=latest_id):
             self.init.rate_limiter.wait()
+            proggress_symbol = '.'
             old_content = dump.dump_content(self.posts_dir, post, with_timestamp=True, return_old_content=True)
             if (not old_content) or (old_content['update_at'] < post['update_at']):
-                print('.', end='', flush=True)
+                proggress_symbol = '+'
                 num_posts += 1
                 num_files += self._save_post(post)
                 if not old_content:
                     # We assume the thread a post belongs to cannot be changed
                     # so we only update threads if the post is entirely new
                     self._update_threads(post['id'])
+            print(proggress_symbol, end='', flush=True)
 
         # Newline after progress dots
-        if num_posts > 0:
-            print()
+        print()
 
         threads_json = [ list(t) for t in self._threads ]
         dump.dump_content(self.channels_dir, threads_json, id_=self.channel_id, name=self._threads_filename)
