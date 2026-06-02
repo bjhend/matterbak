@@ -70,10 +70,9 @@ def dump_image(dir, id_, image_loader, label=None, skip_existing=False):
         return
     extension = '.' + content_type.removeprefix(content_type_prefix)
 
-    ignore_signals = IgnoreSignals([signal.SIGINT, signal.SIGTERM])
-    path = dir / make_filename(id_=id_, name=label, extension=extension)
-    path.write_bytes(response.content)
-    ignore_signals.revert()
+    with IgnoreSignals():
+        path = dir / make_filename(id_=id_, name=label, extension=extension)
+        path.write_bytes(response.content)
 
 
 def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return_old_content=False):
@@ -103,10 +102,9 @@ def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return
         with path.open(encoding="utf8") as old_file:
             old_content = json.load(old_file)
 
-    ignore_signals = IgnoreSignals([signal.SIGINT, signal.SIGTERM])
-    with path.open(mode="w", encoding="utf8") as dump_file:
-        json.dump(content, dump_file)
-    ignore_signals.revert()
+    with IgnoreSignals():
+        with path.open(mode="w", encoding="utf8") as dump_file:
+            json.dump(content, dump_file)
 
     return old_content
 

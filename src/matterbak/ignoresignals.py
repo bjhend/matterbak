@@ -9,7 +9,9 @@ import signal
 
 class IgnoreSignals():
     def __init__(
-            self, signals, print_message_on_signal=None, ignore_on_init=True,
+            self,
+            signals=[signal.SIGINT, signal.SIGTERM],
+            print_message_on_signal=None,
             delay_signals=True):
         """
         Temporarily ignore specified signals (e.g., Ctrl+C, kill) during
@@ -22,7 +24,7 @@ class IgnoreSignals():
         >>> ignore_signals.revert()
 
         signals (list): List of signal numbers to ignore
-                        (e.g., [signal.SIGINT, signal.SIGTERM]).
+                        (default: [signal.SIGINT, signal.SIGTERM]).
         print_message_on_signal (str or callable or None):
             message to be printed on signal
             * If None (default) the f-string
@@ -34,7 +36,6 @@ class IgnoreSignals():
             * If bool(print_message_on_signal) is True
               the variable print_message_on_signal is printed.
             * Otherwise (e. g. False or '') no output.
-        ignore_on_init (bool): to ignore signals immediately after creation
         delay_signals:
             If True the default handler will be called just after reverting
 
@@ -47,8 +48,14 @@ class IgnoreSignals():
         self.ignored_signum = None
         self.delay_signals = delay_signals
 
-        if ignore_on_init:
-            self.ignore()
+    def __enter__(self):
+        """Enter 'with' context"""
+        self.ignore()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Leave 'with' context"""
+        self.revert()
 
     def update_default_handlers(self):
         """
