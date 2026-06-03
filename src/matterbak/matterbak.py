@@ -105,9 +105,7 @@ class Init:
 
             with open(self.options.channels, encoding="utf8") as channels_config_file:
                 self.channels_config = json.load(channels_config_file)
-            # print(f"channels config:\n{pprint.pformat(self.channels_config)}")
-            print("channels config:\n"
-                  f"{json.dumps(self.channels_config, indent=2)}")
+            print(f"channels config:\n{pprint.pformat(self.channels_config)}")
 
         except json.JSONDecodeError as ex:
             print(f"JSON structure of a config file broken (note that a common cause for a "
