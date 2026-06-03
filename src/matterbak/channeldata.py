@@ -62,15 +62,16 @@ class Channel_Data:
 
     def _load_threads(self):
         """Load thread data from backup"""
-        self._threads = []
-        self._thread_checked_posts = set()
+        self._threads = {}
         threads_path = self.channels_dir / dump.make_filename(self.channel_id, name=self._threads_filename, extension='.json')
         if threads_path.is_file():
             with threads_path.open(encoding="utf8") as threads_file:
                 threads_json = json.load(threads_file)
-            self._threads = [ set(t) for t in threads_json ]
-            for t in self._threads:
-                self._thread_checked_posts |= t
+            # Has the file the new format with root_ids as keys?
+            # (The old file contained a list of lists.)
+            # If not ignore loaded file. It will be overwritten with the new format.
+            if dict == type(threads_json):
+                self._threads = { root_id: set(post_ids) for root_id, post_ids in threads_json.items() }
 
     def _save_post(self, post):
         """Backup a post and its files"""
@@ -88,35 +89,13 @@ class Channel_Data:
                 print(f"Cannot retrieve the file '{file_desc['name']}' posted to channel '{self.name}': {file_respone.text}")
         return num_files
 
-    def _update_threads(self, post_id):
-        """Update thread data with new post ID"""
-        if not post_id in self._thread_checked_posts:
-            thread = set()
-
-            for thread_post in self.init.matter.get_thread(post_id, 'up'):
-                thread.add(thread_post['id'])
-
-            for thread_post in self.init.matter.get_thread(post_id, 'down'):
-                if thread_post['id'] not in self._thread_checked_posts:
-                    thread.add(thread_post['id'])
-                else:
-                    for knwon_thread in self._threads:
-                        if thread_post['id'] in knwon_thread:
-                            # Found an old thread the new posts belong to
-                            knwon_thread |= thread
-                            break
-                    else:
-                        # A new thread started with a single old post
-                        self._threads.append(thread)
-                    break
-            else:
-                if len(thread) > 1:
-                    # Totally new thread
-                    self._threads.append(thread)
-
-            # post_id should be in thread, because of the 'up' loop
-            assert post_id in thread
-            self._thread_checked_posts |= thread
+    def _update_threads(self, post):
+        """Update thread data with new post"""
+        root_id = post['root_id']
+        if root_id:
+            if root_id not in self._threads:
+                self._threads[root_id] = set()
+            self._threads[root_id].add(post['id'])
 
     def backup(self):
         """Download channel data and all its posts and files"""
@@ -141,16 +120,17 @@ class Channel_Data:
                 proggress_symbol = '+'
                 num_posts += 1
                 num_files += self._save_post(post)
-                if not old_content:
-                    # We assume the thread a post belongs to cannot be changed
-                    # so we only update threads if the post is entirely new
-                    self._update_threads(post['id'])
+
+            # We update the threads in any case although thread relations cannot be changed
+            # because this will update the thread file format.
+            self._update_threads(post)
+
             print(proggress_symbol, end='', flush=True)
 
         # Newline after progress dots
         print()
 
-        threads_json = [ list(t) for t in self._threads ]
+        threads_json = { root_id: list(post_ids) for root_id, post_ids in self._threads.items() }
         dump.dump_content(self.channels_dir, threads_json, id_=self.channel_id, name=self._threads_filename)
 
         return num_posts, num_files
