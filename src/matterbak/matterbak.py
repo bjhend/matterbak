@@ -105,7 +105,9 @@ class Init:
 
             with open(self.options.channels, encoding="utf8") as channels_config_file:
                 self.channels_config = json.load(channels_config_file)
-            print(f"channels config:\n{pprint.pformat(self.channels_config)}")
+            # print(f"channels config:\n{pprint.pformat(self.channels_config)}")
+            print("channels config:\n"
+                  f"{json.dumps(self.channels_config, indent=2)}")
 
         except json.JSONDecodeError as ex:
             print(f"JSON structure of a config file broken (note that a common cause for a "
@@ -180,17 +182,19 @@ def backup_direct_channels(init):
         channel_username = member_names.pop() if member_names else init.users.get_user_data()['username']
 
         if channel_username in configured_direct_channels:
-            print(f"Dumping direct channel with '{channel_username}'")
+            print("Dumping direct channel with "
+                  f"{json.dumps(channel_username)}")
             channel_dir = init.options.data_dir / direct_subdir
             channel_data = channeldata.Channel_Data(init, channel_username, dc, channel_dir)
             num_posts, num_files = channel_data.backup()
             print(f"    dumped {num_posts} posts and {num_files} files")
             configured_direct_channels.discard(channel_username)
         else:
-            print(f"Skip direct channel with '{channel_username}'")
+            print(f"Skip direct channel with {json.dumps(channel_username)}")
 
     if(configured_direct_channels):
-        print(f"\nConfigured but missing direct channels: {configured_direct_channels}")
+        print("\nConfigured but missing direct channels: "
+              f"{json.dumps(sorted(configured_direct_channels))}")
 
 
 def is_backup_group_channel(member_usernames, config):
@@ -228,15 +232,18 @@ def backup_group_channels(init):
     all_group_channels = init.teams.get_personal_channels(is_group=True)
     for gc in all_group_channels:
         member_usernames = init.users.get_other_channel_member_names(gc)
+        sorted_member_usernames = sorted(member_usernames)
         if is_backup_group_channel(member_usernames, init.channels_config):
-            name = dump.filename_separator.join(sorted(member_usernames))
-            print(f"Dumping group channel with '{member_usernames}' as {name}")
+            name = dump.filename_separator.join(sorted_member_usernames)
+            print("Dumping group channel with "
+                  f"{json.dumps(sorted_member_usernames)} as {name}")
             channel_dir = init.options.data_dir / groups_subdir
             channel_data = channeldata.Channel_Data(init, name, gc, channel_dir)
             num_posts, num_files = channel_data.backup()
             print(f"    dumped {num_posts} posts and {num_files} files")
         else:
-            print(f"Skip group channel with '{member_usernames}'")
+            print("Skip group channel with "
+                  f"{json.dumps(sorted_member_usernames)}")
 
 
 def select_channels_by_names(all_channels, team_config, names_key):
@@ -254,7 +261,8 @@ def select_channels_by_names(all_channels, team_config, names_key):
     final_channel_names = { c['name'] for c in channels }
     missing_channel_names = names - final_channel_display_names - final_channel_names
     if missing_channel_names:
-        print(f"    Not found {names_key} channel names: {missing_channel_names}")
+        print(f"    Not found {names_key} channel names: "
+              f"{json.dumps(sorted(missing_channel_names))}")
     return channels
 
 
@@ -273,14 +281,17 @@ def backup_team_channels(init):
 
     def print_channels(channels, label):
         channel_names = { c['display_name'] for c in channels }
-        print(f"    {len(channel_names)}/{len(team_channels)} channels {label}: {channel_names}")
+        print(
+            f"    {len(channel_names)}/{len(team_channels)} channels {label}: "
+            f"{json.dumps(sorted(channel_names))}")
 
     print("\n---TEAM CHANNELS---")
     for team_name, team_config in init.channels_config.get('teams', {}).items():
-        print(f"\nTeam '{team_name}'")
+        print(f"\nTeam {json.dumps(team_name)}")
         team = init.teams.get_team_by_name(team_name)
         if not team:
-            print(f"    User \'{init.calling_username}\' does not have access to team \'{team_name}\'. Skipping team.")
+            print(f"    User \'{init.calling_username}\' does not have access "
+                  f"to team {json.dumps(team_name)}. Skipping team.")
             continue
 
         team_channels = init.teams.get_team_channels(team)
@@ -304,7 +315,7 @@ def backup_team_channels(init):
 
         for channel in backup_team_channels:
             channel_dir = team_dir / f"{team['id']}{dump.filename_separator}{team_name}"
-            print(f"    Dumping channel '{channel['display_name']}'")
+            print(f"    Dumping channel {json.dumps(channel['display_name'])}")
 
             channel_data = channeldata.Channel_Data(init, channel['name'], channel, channel_dir)
             num_posts, num_files = channel_data.backup()
