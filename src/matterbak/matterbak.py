@@ -232,8 +232,8 @@ def backup_group_channels(init):
     all_group_channels = init.teams.get_personal_channels(is_group=True)
     for gc in all_group_channels:
         member_usernames = init.users.get_other_channel_member_names(gc)
+        sorted_member_usernames = sorted(member_usernames)
         if is_backup_group_channel(member_usernames, init.channels_config):
-            sorted_member_usernames = sorted(member_usernames)
             name = dump.filename_separator.join(sorted_member_usernames)
             print("Dumping group channel with "
                   f"{json.dumps(sorted_member_usernames)} as {name}")
