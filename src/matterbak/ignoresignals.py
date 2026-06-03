@@ -10,7 +10,7 @@ import signal
 class IgnoreSignals():
     def __init__(
             self,
-            signals=[signal.SIGINT, signal.SIGTERM],
+            signals=None,
             print_message_on_signal=None,
             delay_signals=True):
         """
@@ -19,12 +19,12 @@ class IgnoreSignals():
 
         Example:
 
-        >>> ignore_signals = IgnoreSignals([signal.SIGINT, signal.SIGTERM])
-        >>> # do critical work like file writing ...
-        >>> ignore_signals.revert()
+        >>> with IgnoreSignals([signal.SIGINT, signal.SIGTERM]):
+        ...     # do critical work like file writing
 
         signals (list): List of signal numbers to ignore
                         (default: [signal.SIGINT, signal.SIGTERM]).
+                        Use `None` to accept the default.
         print_message_on_signal (str or callable or None):
             message to be printed on signal
             * If None (default) the f-string
@@ -38,9 +38,14 @@ class IgnoreSignals():
             * Otherwise (e. g. False or '') no output.
         delay_signals:
             If True the default handler will be called just after reverting
+            Only the last ignored signal is re-raised.
+            Attempting to re-raise multiple signals would risk unpredictable
+            behavior and is intentionally omitted.
 
         return: dict with actual handlers
         """
+        if signals is None:
+            signals = [signal.SIGINT, signal.SIGTERM]
         self.signals = signals
         self.print_message_on_signal = print_message_on_signal
         self.default_handlers = []
