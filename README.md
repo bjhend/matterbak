@@ -14,6 +14,8 @@ You can configure for each type which channels should be backed up.
 
 Subsequent runs of the script with the same data dir will update the saved data. So you can run it once to create an initial backup and later update that backup by running it again. If you later add more channels to the configuration those will be downloaded as well. In case you have accidentally deleted part of the files of a channel, delete all channel files and update again. Otherwise updates may get broken.
 
+We implement safe interruption handling: Writes of images and JSON files are protected against partial writes due to interruptions (`Ctrl+C` (SIGINT) and `kill` (SIGTERM) signals). The program delays interruptions while writing to prevent data corruption. After writing finishes, normal interruption behavior resumes and delayed interruptions are called -- you can safely stop the program with `Ctrl+C` or `kill` at any time.
+
 **Attention**: Updating will skip any changes to older posts unless you give option `--update-old-posts`.
 
 

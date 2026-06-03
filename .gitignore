@@ -3,3 +3,4 @@ data/
 credentials.json
 build/
 matterbak.egg-info
+*~
