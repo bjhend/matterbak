@@ -16,7 +16,7 @@ authors = [
 
 
 [project.scripts]
-matterbak = "matterbak:main"
+matterbak = "matterbak.matterbak:main"
 
 
 [build-system]
