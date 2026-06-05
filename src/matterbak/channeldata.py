@@ -134,4 +134,3 @@ class Channel_Data:
         dump.dump_content(self.channels_dir, threads_json, id_=self.channel_id, name=self._threads_filename)
 
         return num_posts, num_files
-

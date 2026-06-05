@@ -155,4 +155,3 @@ class Users:
 
         # Newline after progress dots
         print()
-

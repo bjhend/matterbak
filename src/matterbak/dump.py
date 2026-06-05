@@ -107,4 +107,3 @@ def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return
             json.dump(content, dump_file)
 
     return old_content
-

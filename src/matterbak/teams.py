@@ -62,4 +62,3 @@ class Teams:
             if name in (t['name'], t['display_name']):
                 return t
         return None
-
