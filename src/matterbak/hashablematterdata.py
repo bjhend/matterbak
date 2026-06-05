@@ -3,7 +3,6 @@ Provide class HashableMatterData
 """
 
 
-
 class HashableMatterData(dict):
     """Extends the dict of a mattermost object by hash method to enable storing in a set
 

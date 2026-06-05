@@ -5,15 +5,13 @@ Provide functions to dump data into JSON files
 
 import datetime
 import json
-import signal
 
 from .ignoresignals import IgnoreSignals
 
-
 # Separator between parts of a filename
-filename_separator = '__'
+FILENAME_SEPARATOR = '__'
 # Format for timestamps in file names
-timestamp_format = "%Y%m%d-%H%M%S%f"
+TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S%f"
 
 
 def make_filename(id_, name=None, extension='', mm_timestamp=None):
@@ -29,28 +27,29 @@ def make_filename(id_, name=None, extension='', mm_timestamp=None):
     filename_parts = []
     if mm_timestamp:
         now = datetime.datetime.fromtimestamp(mm_timestamp / 1000)
-        filename_parts.append(now.strftime(timestamp_format))
+        filename_parts.append(now.strftime(TIMESTAMP_FORMAT))
     filename_parts.append(id_)
     if name:
         filename_parts.append(name)
 
-    return filename_separator.join(filename_parts) + extension
+    return FILENAME_SEPARATOR.join(filename_parts) + extension
 
 
-def dump_image(dir, id_, image_loader, label=None, skip_existing=False):
+def dump_image(directory, id_, image_loader, label=None, skip_existing=False):
     """Helper to download and save an image from Mattermost
 
     Calls make_filename with id_, label as name, and extension derived from the
     content type returned from Mattermost.
 
-    dir:           pathlib.Path of the folder to store the image in
+    directory:     pathlib.Path of the folder to store the image in
     id_:           Mattermost ID as prefix for the filename
     image_loader:  function returning an image Response object from Mattermost API
     label:         label to append to filename
     skip_existing: if True skip download if image file already exists
     """
 
-    found_image_files = [ f for f in dir.glob(id_+'*') if f.suffix != '.json' and f.is_file() ]
+    found_image_files = [f for f in directory.glob(
+        id_+'*') if f.suffix != '.json' and f.is_file()]
     if skip_existing and found_image_files:
         return
 
@@ -71,17 +70,18 @@ def dump_image(dir, id_, image_loader, label=None, skip_existing=False):
     extension = '.' + content_type.removeprefix(content_type_prefix)
 
     with IgnoreSignals():
-        path = dir / make_filename(id_=id_, name=label, extension=extension)
+        path = directory / make_filename(id_=id_, name=label, extension=extension)
         path.write_bytes(response.content)
 
 
-def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return_old_content=False):
+def dump_content(directory, content, id_=None, name=None, with_timestamp=False,
+                 return_old_content=False):
     """Helper to save the content as JSON file
 
     Calls make_filename with id_ (if given else content['id']), name, and
     with_timestamp to create the filename.
 
-    dir:                pathlib.Path of the folder to store the file in
+    directory:          pathlib.Path of the folder to store the file in
     content:            data to store
     id_:                Mattermost ID to be integrated into filename, if None use
                         content['id'] instead
@@ -95,7 +95,8 @@ def dump_content(dir, content, id_=None, name=None, with_timestamp=False, return
         id_ = content['id']
     mm_timestamp = content["create_at"] if with_timestamp else None
 
-    path = dir / make_filename(id_, name=name, extension='.json', mm_timestamp=mm_timestamp)
+    path = directory / make_filename(id_, name=name,
+                                     extension='.json', mm_timestamp=mm_timestamp)
 
     old_content = None
     if return_old_content and path.is_file():

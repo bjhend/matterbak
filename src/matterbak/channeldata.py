@@ -1,20 +1,17 @@
 """
-Provide class Channel_Data
+Provide class ChannelData
 """
 
 
-
-import pathlib as pl
 import json
-import time
-from . import dump
+import pathlib as pl
 
+from . import dump
 
 files_subdir = pl.Path('files')
 
 
-
-class Channel_Data:
+class ChannelData:
     """Class to store channel data and back it up"""
 
     def __init__(self, init, name, channel, channels_dir):
@@ -30,8 +27,9 @@ class Channel_Data:
         self.channel = channel
         self.channel_id = self.channel['id']
         self.channels_dir = channels_dir
-        self._threads_filename = f"{self.name}{dump.filename_separator}threads"
-        self.posts_dir = self.channels_dir / dump.make_filename(self.channel_id, name=self.name)
+        self._threads_filename = f"{self.name}{dump.FILENAME_SEPARATOR}threads"
+        self.posts_dir = self.channels_dir / \
+            dump.make_filename(self.channel_id, name=self.name)
         self.files_dir = self.posts_dir / files_subdir
         self.files_dir.mkdir(parents=True, exist_ok=True)
         self._load_threads()
@@ -63,15 +61,18 @@ class Channel_Data:
     def _load_threads(self):
         """Load thread data from backup"""
         self._threads = {}
-        threads_path = self.channels_dir / dump.make_filename(self.channel_id, name=self._threads_filename, extension='.json')
+        threads_path = self.channels_dir / \
+            dump.make_filename(
+                self.channel_id, name=self._threads_filename, extension='.json')
         if threads_path.is_file():
             with threads_path.open(encoding="utf8") as threads_file:
                 threads_json = json.load(threads_file)
             # Has the file the new format with root_ids as keys?
             # (The old file contained a list of lists.)
             # If not ignore loaded file. It will be overwritten with the new format.
-            if dict == type(threads_json):
-                self._threads = { root_id: set(post_ids) for root_id, post_ids in threads_json.items() }
+            if isinstance(threads_json, dict):
+                self._threads = {root_id: set(
+                    post_ids) for root_id, post_ids in threads_json.items()}
 
     def _save_post(self, post):
         """Backup a post and its files"""
@@ -82,11 +83,14 @@ class Channel_Data:
             file_respone = self.init.matter.get_file(file_id)
             if file_respone.ok:
                 # extension is contained in name
-                file_dump_path = self.files_dir / dump.make_filename(file_id, name=file_desc['name'])
+                file_dump_path = self.files_dir / \
+                    dump.make_filename(file_id, name=file_desc['name'])
                 file_dump_path.write_bytes(file_respone.content)
                 num_files += 1
             else:
-                print(f"Cannot retrieve the file '{file_desc['name']}' posted to channel '{self.name}': {file_respone.text}")
+                print(
+                    f"Cannot retrieve the file '{file_desc['name']}'"
+                    f"posted to channel '{self.name}': {file_respone.text}")
         return num_files
 
     def _update_threads(self, post):
@@ -103,7 +107,8 @@ class Channel_Data:
         dump.dump_content(self.channels_dir, self.channel, name=self.name)
 
         members = self.init.users.get_group_members(self.channel)
-        dump.dump_content(self.channels_dir, members, id_=self.channel_id, name=f"{self.name}{dump.filename_separator}members")
+        dump.dump_content(self.channels_dir, members, id_=self.channel_id,
+                          name=f"{self.name}{dump.FILENAME_SEPARATOR}members")
 
         if self.init.options.update_old_posts:
             latest_id = None
@@ -115,7 +120,8 @@ class Channel_Data:
         for post in self.init.matter.get_posts_for_channel(self.channel_id, after=latest_id):
             self.init.rate_limiter.wait()
             proggress_symbol = '.'
-            old_content = dump.dump_content(self.posts_dir, post, with_timestamp=True, return_old_content=True)
+            old_content = dump.dump_content(
+                self.posts_dir, post, with_timestamp=True, return_old_content=True)
             if (not old_content) or (old_content['update_at'] < post['update_at']):
                 proggress_symbol = '+'
                 num_posts += 1
@@ -130,7 +136,9 @@ class Channel_Data:
         # Newline after progress dots
         print()
 
-        threads_json = { root_id: list(post_ids) for root_id, post_ids in self._threads.items() }
-        dump.dump_content(self.channels_dir, threads_json, id_=self.channel_id, name=self._threads_filename)
+        threads_json = {root_id: list(post_ids)
+                        for root_id, post_ids in self._threads.items()}
+        dump.dump_content(self.channels_dir, threads_json,
+                          id_=self.channel_id, name=self._threads_filename)
 
         return num_posts, num_files

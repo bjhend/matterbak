@@ -8,8 +8,9 @@ import argparse
 import json
 import zipfile
 
+
 def print_json(typ, content, jsonl):
-    json.dump({ "type": typ, typ: content}, jsonl)
+    json.dump({"type": typ, typ: content}, jsonl)
     print(file=jsonl)
 
 
@@ -34,7 +35,8 @@ def main():
                     if team["id"] in teams:
                         continue
                     teams[team["id"]] = team["name"]
-                    keys = ("name", "display_name", "type", "description", "allow_open_invite")
+                    keys = ("name", "display_name", "type",
+                            "description", "allow_open_invite")
                     print_json("team", {key: team[key] for key in keys}, jsonl)
         users = {}
         channels = {}
@@ -48,8 +50,10 @@ def main():
                         channel["team"] = teams.get(channel["team_id"], "")
                         channels[cdir] = (z, channel["team"], channel["name"])
                         if channel["type"] in "OP":
-                            keys = ("team", "name", "display_name", "type", "header", "purpose")
-                            print_json("channel", {key: channel[key] for key in keys}, jsonl)
+                            keys = ("team", "name", "display_name",
+                                    "type", "header", "purpose")
+                            print_json(
+                                "channel", {key: channel[key] for key in keys}, jsonl)
                         else:
                             direct.add(cdir)
                 if n.startswith("users/"):
@@ -68,9 +72,12 @@ def main():
                 for n in z.namelist():
                     if n.startswith(cdir + "20") and n.endswith(".json"):
                         post = json.load(z.open(n))
-                        post.update({"team": team, "channel": cname, "user": users[post["user_id"]]["username"]})
-                        keys = ("team", "channel", "user", "message", "props", "create_at")
-                        print_json("post", {key: post[key] for key in keys}, jsonl)
+                        post.update({"team": team, "channel": cname,
+                                    "user": users[post["user_id"]]["username"]})
+                        keys = ("team", "channel", "user",
+                                "message", "props", "create_at")
+                        print_json("post", {key: post[key]
+                                   for key in keys}, jsonl)
 
 
 if __name__ == "__main__":

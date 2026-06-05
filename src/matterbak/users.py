@@ -3,7 +3,6 @@ Provide class Users
 """
 
 
-
 import http
 import functools
 import pathlib as pl
@@ -15,7 +14,6 @@ from .hashablematterdata import HashableMatterData
 
 
 users_subdir = pl.Path('users')
-
 
 
 class Users:
@@ -70,7 +68,7 @@ class Users:
             # split set of user IDs
             half_len = int(len(user_ids) / 2)
             second_half = user_ids.copy()
-            first_half = { second_half.pop() for i in range(half_len) }
+            first_half = {second_half.pop() for i in range(half_len)}
 
             # recursively update user data for both halfs
             self._update_user_data_recursion(first_half)
@@ -98,7 +96,9 @@ class Users:
         return self._group_members[group_id]
 
     def get_other_channel_member_names(self, channel):
-        """Convenience method to get the names of the users of a channel except the executing user themself
+        """
+        Convenience method to get the names of the users of a channel except
+        the executing user themself
 
         channel: Mattermost channel
 
@@ -106,7 +106,8 @@ class Users:
         """
 
         members = self.get_group_members(channel)
-        return { self.get_user_data(m['user_id'])['username'] for m in members if m['user_id'] != self._init.calling_user_id }
+        return {self.get_user_data(m['user_id'])['username'] \
+                for m in members if m['user_id'] != self._init.calling_user_id}
 
     def backup_all_users(self):
         """Backup all user data in the users data subdir"""
@@ -115,7 +116,7 @@ class Users:
             return
 
         # Get IDs of all team/channel members and the executing user themself
-        member_user_ids = { self._init.calling_user_id }
+        member_user_ids = {self._init.calling_user_id}
         for members in self._group_members.values():
             for m in members:
                 member_user_ids.add(m['user_id'])
@@ -136,22 +137,27 @@ class Users:
             print('.', end='', flush=True)
             self._init.rate_limiter.wait()
             user = self.get_user_data(user_id)
-            old_user_data = dump.dump_content(users_dir, user, name=user["username"], return_old_content=True)
+            old_user_data = dump.dump_content(
+                users_dir, user, name=user["username"], return_old_content=True)
 
             if self._init.options.skip_user_images:
                 continue
 
             skip_existing = False
             if old_user_data:
-                current_last_picture_update = user.get('last_picture_update', 0)
-                old_last_picture_update = old_user_data.get('last_picture_update', 0)
+                current_last_picture_update = user.get(
+                    'last_picture_update', 0)
+                old_last_picture_update = old_user_data.get(
+                    'last_picture_update', 0)
                 if current_last_picture_update <= old_last_picture_update:
                     skip_existing = True
 
-            image_loader = functools.partial(self._init.matter.get_user_profile_image, user_id)
-            dump.dump_image(users_dir, user_id, image_loader,
-                       label=f'{user["username"]}{dump.filename_separator}image',
-                       skip_existing=skip_existing)
+            image_loader = functools.partial(
+                self._init.matter.get_user_profile_image, user_id)
+            dump.dump_image(
+                users_dir, user_id, image_loader,
+                label=f'{user["username"]}{dump.FILENAME_SEPARATOR}image',
+                skip_existing=skip_existing)
 
         # Newline after progress dots
         print()
