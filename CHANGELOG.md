@@ -7,6 +7,8 @@
 * Print '+' as progress symbol when a post is actually saved
 * Improve determination of thread relations resulting in a new format for thread files
   - **Attention:** To update the thread files run once with option `--update-old-posts`
+* Add option `--version`
+* Don't export any package functions or classes as it is currently only supposed as command line tool
 
 
 ## 0.3.1
