@@ -289,6 +289,9 @@ def backup_team_channels(init):
                   f"to team {json.dumps(team_name)}. Skipping team.")
             continue
 
+        # Use internal name as part of paths to avoid problems display_name
+        # characters not suitable for paths
+        team_filename = team['name']
         team_channels = init.teams.get_team_channels(team)
 
         backup_team_channels = select_channels_by_names(team_channels, team_config, 'include')
@@ -303,21 +306,20 @@ def backup_team_channels(init):
 
         team_dir = init.options.data_dir / dump.teams_subdir
         team_dir.mkdir(parents=True, exist_ok=True)
-        dump.dump_content(team_dir, team, name=team_name)
+        dump.dump_content(team_dir, team, name=team_filename)
 
         icon_loader = functools.partial(init.matter.get_team_icon, team['id'])
         dump.dump_image(team_dir, team['id'], icon_loader, dump.suffix_icon)
 
+        channel_dir = team_dir / f"{team['id']}{dump.filename_separator}{team_filename}"
         for channel in backup_team_channels:
-            channel_dir = team_dir / f"{team['id']}{dump.filename_separator}{team_name}"
             print(f"    Dumping channel {json.dumps(channel['display_name'])}")
-
             channel_data = channeldata.Channel_Data(init, channel['name'], channel, channel_dir)
             num_posts, num_files = channel_data.backup()
             print(f"        dumped {num_posts} posts and {num_files} files")
 
         members = init.users.get_group_members(team)
-        dump.dump_content(team_dir, members, id_=team['id'], name=f"{team_name}{dump.filename_separator}{dump.suffix_members}")
+        dump.dump_content(team_dir, members, id_=team['id'], name=f"{team_filename}{dump.filename_separator}{dump.suffix_members}")
 
 
 def backup_custom_emojis(init):

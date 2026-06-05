@@ -9,6 +9,10 @@
   - **Attention:** To update the thread files run once with option `--update-old-posts`
 * Add option `--version`
 * Don't export any package functions or classes as it is currently only supposed as command line tool
+* Append internal team name to paths instead of eventually the display_name to
+  avoid potential problems with unsuitable characters
+  - **Attention:** To update the paths delete the teams folder and repeat matterbak
+    while you may skip anything except teams
 
 
 ## 0.3.1
