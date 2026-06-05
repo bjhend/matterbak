@@ -12,6 +12,7 @@ import pathlib as pl
 import functools
 import time
 import random
+import importlib.metadata
 
 from . import dump
 from .hashablematterdata import HashableMatterData
@@ -151,6 +152,7 @@ class Init:
         parser.add_argument(
             "--step-jitter", type=float, default=0,
             help="Random delay in seconds between each backup unit. Default: %(default)s.")
+        parser.add_argument('--version', action='version', version=importlib.metadata.version('matterbak'))
         return parser.parse_args()
 
     def _get_mattermost_api(self, creds):

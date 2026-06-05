@@ -145,6 +145,7 @@ optional arguments:
                         Random delay in seconds at script start. Default: 0.
   --step-jitter STEP_JITTER
                         Random delay in seconds between each backup unit. Default: 0.
+  --version             show program's version number and exit
 
 ```
 
