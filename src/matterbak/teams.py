@@ -2,6 +2,7 @@
 Provide class Teams
 """
 
+import sys
 
 from .hashablematterdata import HashableMatterData
 
@@ -25,7 +26,7 @@ class Teams:
         if not self._all_teams:
             print(
                 f"User \'{self._init.calling_username}\' is not member of any team. Aborting.")
-            exit(1)
+            sys.exit(1)
 
         # Find direct and group channels
         # We need a dummy team to get the channels
