@@ -52,14 +52,18 @@ class RateLimiter:
         """Wait random initial or step jitter time"""
         jitter = self.initial_jitter if initial else self.step_jitter
         if jitter > 0:
-            delay = random.uniform(0, jitter)
+            delay = random.uniform(0, jitter)  # nosec
             label = "Initial" if initial else "Step"
             print(f"{label} random jitter: sleeping for {delay:.2f}s")
             time.sleep(delay)
 
 
-class Init:
-    """Parses the command line and provides all setup to run the downloads
+class Init:  # pylint: disable = too-few-public-methods
+    """
+    Parses the command line and provides all setup to run the downloads
+
+    Note: This is an internal setup class with minimal public API.
+    It's not meant for reuse.
     """
 
     def __init__(self):
@@ -107,7 +111,6 @@ class Init:
 
         calling_user = self.matter.get_user_by_username(self.calling_username)
         self.calling_user_id = calling_user["id"]
-
         self.users = users.Users(self)
         self.teams = teams.Teams(self)
 

@@ -11,7 +11,7 @@ from . import dump
 files_subdir = pl.Path('files')
 
 
-class ChannelData:
+class ChannelData:  # pylint: disable = too-few-public-methods
     """Class to store channel data and back it up"""
 
     def __init__(self, init, name, channel, channels_dir):
@@ -25,11 +25,12 @@ class ChannelData:
         self.init = init
         self.name = name
         self.channel = channel
-        self.channel_id = self.channel['id']
+        if 'id' not in self.channel:
+            raise KeyError("key 'id' not found in channel")
         self.channels_dir = channels_dir
         self._threads_filename = f"{self.name}{dump.FILENAME_SEPARATOR}threads"
         self.posts_dir = self.channels_dir / \
-            dump.make_filename(self.channel_id, name=self.name)
+            dump.make_filename(self.channel['id'], name=self.name)
         self.files_dir = self.posts_dir / files_subdir
         self.files_dir.mkdir(parents=True, exist_ok=True)
         self._load_threads()
@@ -63,7 +64,7 @@ class ChannelData:
         self._threads = {}
         threads_path = self.channels_dir / \
             dump.make_filename(
-                self.channel_id, name=self._threads_filename, extension='.json')
+                self.channel['id'], name=self._threads_filename, extension='.json')
         if threads_path.is_file():
             with threads_path.open(encoding="utf8") as threads_file:
                 threads_json = json.load(threads_file)
@@ -107,7 +108,7 @@ class ChannelData:
         dump.dump_content(self.channels_dir, self.channel, name=self.name)
 
         members = self.init.users.get_group_members(self.channel)
-        dump.dump_content(self.channels_dir, members, id_=self.channel_id,
+        dump.dump_content(self.channels_dir, members, id_=self.channel['id'],
                           name=f"{self.name}{dump.FILENAME_SEPARATOR}members")
 
         if self.init.options.update_old_posts:
@@ -117,7 +118,7 @@ class ChannelData:
 
         num_posts = 0
         num_files = 0
-        for post in self.init.matter.get_posts_for_channel(self.channel_id, after=latest_id):
+        for post in self.init.matter.get_posts_for_channel(self.channel['id'], after=latest_id):
             self.init.rate_limiter.wait()
             proggress_symbol = '.'
             old_content = dump.dump_content(
@@ -139,6 +140,6 @@ class ChannelData:
         threads_json = {root_id: list(post_ids)
                         for root_id, post_ids in self._threads.items()}
         dump.dump_content(self.channels_dir, threads_json,
-                          id_=self.channel_id, name=self._threads_filename)
+                          id_=self.channel['id'], name=self._threads_filename)
 
         return num_posts, num_files
