@@ -187,7 +187,11 @@ def backup_direct_channels(init):
     configured_direct_channels = set(init.channels_config.get('direct', []))
     for dc in all_direct_channels:
         member_names = init.users.get_other_channel_member_names(dc)
-        assert len(member_names) <= 1, "A direct channel has more than one user"
+        if len(member_names) > 1:
+            raise ValueError(
+                "A direct channel has more than one user: "
+                f"{json.dumps(member_names)}"
+    )
         channel_username = member_names.pop(
         ) if member_names else init.users.get_user_data()['username']
 
