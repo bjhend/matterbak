@@ -29,7 +29,7 @@ class ChannelData:
         if 'id' not in self.channel:
             raise KeyError("key 'id' not found in channel")
         self.channels_dir = channels_dir
-        self._threads_filename = f"{self.name}{dump.FILENAME_SEPARATOR}threads"
+        self._threads_filename = f"{self.name}{dump.FILENAME_SEPARATOR}{dump.SUFFIX_THREADS}"
         self.posts_dir = self.channels_dir / \
             dump.make_filename(self.channel['id'], name=self.name)
         self.files_dir = self.posts_dir / files_subdir
@@ -48,7 +48,7 @@ class ChannelData:
         """
         latest_post_file = self.posts_dir / ' '
         for post_file in self.posts_dir.iterdir():
-            if post_file.suffix.lower() != '.json':
+            if post_file.suffix.lower() != dump.JSON_EXTENSION:
                 continue
             if post_file.name > latest_post_file.name:
                 latest_post_file = post_file
@@ -63,6 +63,7 @@ class ChannelData:
     def _load_threads(self):
         """Load thread data from backup"""
         self._threads = {}
+
         threads_path = self.channels_dir / \
             dump.make_filename(
                 self.channel['id'], name=self._threads_filename, extension='.json')
@@ -109,8 +110,9 @@ class ChannelData:
         dump.dump_content(self.channels_dir, self.channel, name=self.name)
 
         members = self.init.users.get_group_members(self.channel)
-        dump.dump_content(self.channels_dir, members, id_=self.channel['id'],
-                          name=f"{self.name}{dump.FILENAME_SEPARATOR}members")
+        dump.dump_content(
+            self.channels_dir, members, id_=self.channel['id'],
+            name=f"{self.name}{dump.FILENAME_SEPARATOR}{dump.SUFFIX_MEMBERS}")
 
         if self.init.options.update_old_posts:
             latest_id = None

@@ -5,6 +5,7 @@ matterbak backs up all channels including direct conversations listed in a confi
 
 import argparse
 import functools
+import importlib.metadata
 import json
 import pathlib as pl
 import pprint
@@ -20,11 +21,6 @@ import mattermost
 from . import channeldata, dump, teams, users
 
 default_data_dir = pl.Path('data')
-# Subdirs below data_dir to store the related downloads
-teams_subdir = pl.Path('teams')
-groups_subdir = pl.Path('groups')
-direct_subdir = pl.Path('direct')
-emojis_subdir = pl.Path('emojis')
 
 
 class RateLimiter:
@@ -166,6 +162,9 @@ class Init:
             "--step-jitter", type=float, default=0,
             help="Random delay in seconds between each backup unit. "
             "Default: %(default)s.")
+        parser.add_argument(
+            '--version', action='version',
+            version=importlib.metadata.version('matterbak'))
         return parser.parse_args()
 
     def _get_mattermost_api(self, creds):
@@ -195,14 +194,14 @@ def backup_direct_channels(init):
             raise ValueError(
                 "A direct channel has more than one user: "
                 f"{json.dumps(member_names)}"
-    )
+            )
         channel_username = member_names.pop(
         ) if member_names else init.users.get_user_data()['username']
 
         if channel_username in configured_direct_channels:
             print("Dumping direct channel with "
                   f"{json.dumps(channel_username)}")
-            channel_dir = init.options.data_dir / direct_subdir
+            channel_dir = init.options.data_dir / dump.direct_subdir
             channel_data = channeldata.ChannelData(
                 init, channel_username, dc, channel_dir)
             num_posts, num_files = channel_data.backup()
@@ -259,7 +258,7 @@ def backup_group_channels(init):
             name = dump.FILENAME_SEPARATOR.join(sorted_member_usernames)
             print("Dumping group channel with "
                   f"{json.dumps(sorted_member_usernames)} as {name}")
-            channel_dir = init.options.data_dir / groups_subdir
+            channel_dir = init.options.data_dir / dump.groups_subdir
             channel_data = channeldata.ChannelData(
                 init, name, gc, channel_dir)
             num_posts, num_files = channel_data.backup()
@@ -320,6 +319,9 @@ def backup_team_channels(init):
                   f"to team {json.dumps(team_name)}. Skipping team.")
             continue
 
+        # Use internal name as part of paths to avoid problems display_name
+        # characters not suitable for paths
+        team_filename = team['name']
         team_channels = init.teams.get_team_channels(team)
 
         team_channels_to_backup = select_channels_by_names(
@@ -335,18 +337,17 @@ def backup_team_channels(init):
         print_channels(team_channels - team_channels_to_backup,
                        "skipped from backup")
 
-        team_dir = init.options.data_dir / teams_subdir
+        team_dir = init.options.data_dir / dump.teams_subdir
         team_dir.mkdir(parents=True, exist_ok=True)
-        dump.dump_content(team_dir, team, name=team_name)
+        dump.dump_content(team_dir, team, name=team_filename)
 
         icon_loader = functools.partial(init.matter.get_team_icon, team['id'])
-        dump.dump_image(team_dir, team['id'], icon_loader, 'icon')
+        dump.dump_image(team_dir, team['id'], icon_loader, dump.SUFFIX_ICON)
 
+        channel_dir = team_dir / \
+            f"{team['id']}{dump.FILENAME_SEPARATOR}{team_filename}"
         for channel in team_channels_to_backup:
-            channel_dir = team_dir / \
-                f"{team['id']}{dump.FILENAME_SEPARATOR}{team_name}"
             print(f"    Dumping channel {json.dumps(channel['display_name'])}")
-
             channel_data = channeldata.ChannelData(
                 init, channel['name'], channel, channel_dir)
             num_posts, num_files = channel_data.backup()
@@ -365,7 +366,7 @@ def backup_custom_emojis(init):
 
     print("\n---CUSTOM EMOJIS---")
 
-    emojis_dir = init.options.data_dir / emojis_subdir
+    emojis_dir = init.options.data_dir / dump.emojis_subdir
     emojis_dir.mkdir(parents=True, exist_ok=True)
 
     for emoji in init.matter.get_list_of_custom_emojis():

@@ -5,13 +5,29 @@ Provide functions to dump data into JSON files
 
 import datetime
 import json
+import pathlib as pl
 
 from .ignoresignals import IgnoreSignals
 
+JSON_EXTENSION = '.json'
 # Separator between parts of a filename
 FILENAME_SEPARATOR = '__'
 # Format for timestamps in file names
 TIMESTAMP_FORMAT = "%Y%m%d-%H%M%S%f"
+
+# Subdirs below data_dir to store the related downloads
+teams_subdir = pl.Path('teams')
+groups_subdir = pl.Path('groups')
+direct_subdir = pl.Path('direct')
+emojis_subdir = pl.Path('emojis')
+users_subdir = pl.Path('users')
+files_subdir = pl.Path('files')
+
+# Suffixes for types of data files
+SUFFIX_MEMBERS = 'members'
+SUFFIX_THREADS = 'threads'
+SUFFIX_ICON = 'icon'
+SUFFIX_IMAGE = 'image'
 
 
 def make_filename(id_, name=None, extension='', mm_timestamp=None):
@@ -49,7 +65,7 @@ def dump_image(directory, id_, image_loader, label=None, skip_existing=False):
     """
 
     found_image_files = [f for f in directory.glob(
-        id_+'*') if f.suffix != '.json' and f.is_file()]
+        id_+'*') if f.suffix != JSON_EXTENSION and f.is_file()]
     if skip_existing and found_image_files:
         return
 
@@ -70,7 +86,8 @@ def dump_image(directory, id_, image_loader, label=None, skip_existing=False):
     extension = '.' + content_type.removeprefix(content_type_prefix)
 
     with IgnoreSignals():
-        path = directory / make_filename(id_=id_, name=label, extension=extension)
+        path = directory / \
+            make_filename(id_=id_, name=label, extension=extension)
         path.write_bytes(response.content)
 
 
@@ -96,8 +113,9 @@ def dump_content(directory, content, id_=None, name=None, with_timestamp=False,
         id_ = content['id']
     mm_timestamp = content["create_at"] if with_timestamp else None
 
-    path = directory / make_filename(id_, name=name,
-                                     extension='.json', mm_timestamp=mm_timestamp)
+    path = directory / \
+        make_filename(id_, name=name, extension=JSON_EXTENSION,
+                      mm_timestamp=mm_timestamp)
 
     old_content = None
     if return_old_content and path.is_file():
