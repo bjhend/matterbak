@@ -2,6 +2,6 @@
 main entry point for the matterbak
 """
 
-from .matterbak import main
+# We intentionally do not export any objects, because the package should only
+# be use as executable script
 
-__all__ = ["main"]

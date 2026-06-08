@@ -45,7 +45,7 @@ is needed for easier API access.
 **Note** that we require a version of the mattermost module with additional
 functions. For some of the additions there are already open [pull requests](https://github.com/someone-somenet-org/mattermost-python-api/issues?q=is%3Aopen%20is%3Apr%20author%3A%40bjhend)
 to add these to the package.
-Until all changes are added to the original mattermost module you have to  use
+Until all changes are added to the original mattermost module you have to use
 the [`development` branch](https://github.com/bjhend/mattermost-python-api/tree/development)
 of [this fork](https://github.com/bjhend/mattermost-python-api) containing all
 required additions.
@@ -69,7 +69,7 @@ following format
 ```
 
 Username is the name you have in Mattermost. You can find it by clicking on
-you avatar in the top right corner
+your avatar in the top right corner
 as the name after the `@` sign. Do not include the `@`.
 
 If you login via GitLab or a comparable service, replace `password` wth `token`
@@ -129,13 +129,13 @@ The channels to back up are configured in another JSON file
 ```
 
 The file has three main keys `teams`, `direct`, and `group` related to the
-channels types explained above.
+channel types explained above.
 
 `teams` contains a mapping of team names on dicts with the optional keys
 `include` and `exclude`, which contain a list of channel names each. First, all
 channels from the `include` list are put on the backup list. If the list is
 empty or `include` is not given at all, all channels of the team are put on the
-list. Then, iv `exclude` is present, all channels of the `exclude` list are
+list. Then, if `exclude` is present, all channels of the `exclude` list are
 removed from the backup list.
 
 In this example, `channel1` and `channel2` of `team1` are backed up. `channel3`
@@ -166,7 +166,7 @@ usage: matterbak [-h] [--credentials CREDENTIALS] [--channels CHANNELS]
                  [--skip-direct] [--skip-groups] [--skip-teams] [--skip-users]
                  [--skip-user-images] [--skip-emojis]
                  [--rate-limit RATE_LIMIT] [--initial-jitter INITIAL_JITTER]
-                 [--step-jitter STEP_JITTER]
+                 [--step-jitter STEP_JITTER] [--version]
 
 options:
   -h, --help            show this help message and exit
@@ -271,10 +271,10 @@ Team and channel members are stored in a special file, containing a list with
 all team/channel member objects.
 
 A special case are threads. Threads are not Mattermost objects. To store the
-threads, any channel data directory contains a threads file with a list of
-threads. Each thread is a list of post IDs belonging to the same thread. Don't
-mess up with this file. It will be updated on each run, which may fail if the
-file is corrupted.
+threads, any channel data directory contains a threads file with a mapping of
+post IDs. It maps the ID if the root post of a thread on a list of IDs if the
+answer posts. Don't mess up with this file. It will be updated on each run,
+which may fail if the file is corrupted.
 
 ## Notes
 

@@ -30,8 +30,8 @@ class ChannelData:
             raise KeyError("key 'id' not found in channel")
         self.channels_dir = channels_dir
         self._threads_filename = f"{self.name}{dump.FILENAME_SEPARATOR}{dump.SUFFIX_THREADS}"
-        self.posts_dir = self.channels_dir / \
-            dump.make_filename(self.channel['id'], name=self.name)
+        self.posts_dir = (self.channels_dir /
+            dump.make_filename(self.channel['id'], name=self.name))
         self.files_dir = self.posts_dir / files_subdir
         self.files_dir.mkdir(parents=True, exist_ok=True)
         self._load_threads()
@@ -64,9 +64,9 @@ class ChannelData:
         """Load thread data from backup"""
         self._threads = {}
 
-        threads_path = self.channels_dir / \
+        threads_path = (self.channels_dir /
             dump.make_filename(
-                self.channel['id'], name=self._threads_filename, extension='.json')
+                self.channel['id'], name=self._threads_filename, extension=dump.JSON_EXTENSION))
         if threads_path.is_file():
             with threads_path.open(encoding="utf8") as threads_file:
                 threads_json = json.load(threads_file)
@@ -74,8 +74,8 @@ class ChannelData:
             # (The old file contained a list of lists.)
             # If not ignore loaded file. It will be overwritten with the new format.
             if isinstance(threads_json, dict):
-                self._threads = {root_id: set(
-                    post_ids) for root_id, post_ids in threads_json.items()}
+                self._threads = {root_id: set(post_ids)
+                                 for root_id, post_ids in threads_json.items()}
 
     def _save_post(self, post):
         """Backup a post and its files"""
@@ -86,8 +86,8 @@ class ChannelData:
             file_respone = self.init.matter.get_file(file_id)
             if file_respone.ok:
                 # extension is contained in name
-                file_dump_path = self.files_dir / \
-                    dump.make_filename(file_id, name=file_desc['name'])
+                file_dump_path = (self.files_dir /
+                    dump.make_filename(file_id, name=file_desc['name']))
                 file_dump_path.write_bytes(file_respone.content)
                 num_files += 1
             else:

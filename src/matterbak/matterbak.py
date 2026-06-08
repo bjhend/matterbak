@@ -344,8 +344,8 @@ def backup_team_channels(init):
         icon_loader = functools.partial(init.matter.get_team_icon, team['id'])
         dump.dump_image(team_dir, team['id'], icon_loader, dump.SUFFIX_ICON)
 
-        channel_dir = team_dir / \
-            f"{team['id']}{dump.FILENAME_SEPARATOR}{team_filename}"
+        channel_dir = (team_dir /
+            f"{team['id']}{dump.FILENAME_SEPARATOR}{team_filename}")
         for channel in team_channels_to_backup:
             print(f"    Dumping channel {json.dumps(channel['display_name'])}")
             channel_data = channeldata.ChannelData(
@@ -355,7 +355,7 @@ def backup_team_channels(init):
 
         members = init.users.get_group_members(team)
         dump.dump_content(
-            team_dir, members, id_=team['id'], name=f"{team_name}{dump.FILENAME_SEPARATOR}members")
+            team_dir, members, id_=team['id'], name=f"{team_filename}{dump.FILENAME_SEPARATOR}{dump.SUFFIX_MEMBERS}")
 
 
 def backup_custom_emojis(init):

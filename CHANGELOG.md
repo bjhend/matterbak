@@ -15,10 +15,11 @@
   avoid potential problems with unsuitable characters
   - **Attention:** To update the paths delete the teams folder and repeat
     matterbak while you may skip anything except teams
+* Improve code quality by automatic lint check
 
 ## 0.3.1
 
-* This should have been a minor instead of a patch release*
+*This should have been a minor instead of a patch release*
 
 * More messages
 * Catch more errors
@@ -52,7 +53,7 @@
 
 ## 0.1.0
 
-* *Not assigned*
+*Not assigned*
 
 ## 0.0.1
 

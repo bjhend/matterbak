@@ -64,8 +64,8 @@ def dump_image(directory, id_, image_loader, label=None, skip_existing=False):
     skip_existing: if True skip download if image file already exists
     """
 
-    found_image_files = [f for f in directory.glob(
-        id_+'*') if f.suffix != JSON_EXTENSION and f.is_file()]
+    found_image_files = [f for f in directory.glob(id_+'*')
+                         if f.suffix != JSON_EXTENSION and f.is_file()]
     if skip_existing and found_image_files:
         return
 
@@ -86,8 +86,8 @@ def dump_image(directory, id_, image_loader, label=None, skip_existing=False):
     extension = '.' + content_type.removeprefix(content_type_prefix)
 
     with IgnoreSignals():
-        path = directory / \
-            make_filename(id_=id_, name=label, extension=extension)
+        path = (directory /
+            make_filename(id_=id_, name=label, extension=extension))
         path.write_bytes(response.content)
 
 
@@ -113,9 +113,9 @@ def dump_content(directory, content, id_=None, name=None, with_timestamp=False,
         id_ = content['id']
     mm_timestamp = content["create_at"] if with_timestamp else None
 
-    path = directory / \
+    path = (directory /
         make_filename(id_, name=name, extension=JSON_EXTENSION,
-                      mm_timestamp=mm_timestamp)
+                      mm_timestamp=mm_timestamp))
 
     old_content = None
     if return_old_content and path.is_file():

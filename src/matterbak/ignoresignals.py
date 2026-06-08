@@ -8,7 +8,7 @@ import signal
 
 
 class IgnoreSignals():
-    """context manager to temporarily ignore specified signals"""
+    """Context manager to temporarily ignore specified signals"""
     def __init__(
             self,
             signals=None,

@@ -42,8 +42,8 @@ class Teams:
         """
 
         channel_type = CHANNEL_TYPE_GROUP if is_group else CHANNEL_TYPE_DIRECT
-        return {HashableMatterData(c) \
-                for c in self._all_channels_of_some_team \
+        return {HashableMatterData(c)
+                for c in self._all_channels_of_some_team
                 if c['type'] == channel_type}
 
     def get_team_channels(self, team):
