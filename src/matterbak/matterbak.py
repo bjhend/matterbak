@@ -58,7 +58,8 @@ class RateLimiter:
             time.sleep(delay)
 
 
-class Init:  # pylint: disable = too-few-public-methods
+class Init:
+    # pylint: disable = too-few-public-methods, too-many-instance-attributes
     """
     Parses the command line and provides all setup to run the downloads
 
@@ -291,6 +292,7 @@ def select_channels_by_names(all_channels, team_config, names_key):
 
 
 def backup_team_channels(init):
+    # pylint: disable = too-many-locals
     """Store data of configured teams
 
     init: instance of the Init class

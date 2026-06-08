@@ -11,7 +11,8 @@ from . import dump
 files_subdir = pl.Path('files')
 
 
-class ChannelData:  # pylint: disable = too-few-public-methods
+class ChannelData:
+    # pylint: disable = too-few-public-methods, too-many-instance-attributes
     """Class to store channel data and back it up"""
 
     def __init__(self, init, name, channel, channels_dir):

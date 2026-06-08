@@ -17,6 +17,7 @@ def print_json(typ, content, jsonl):
 
 
 def main():
+    # pylint: disable = too-many-locals, too-many-branches
     """Main function, also entry point for the matterbak script"""
     parser = argparse.ArgumentParser()
     parser.add_argument("zips", nargs="+",

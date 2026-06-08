@@ -76,6 +76,7 @@ def dump_image(directory, id_, image_loader, label=None, skip_existing=False):
 
 def dump_content(directory, content, id_=None, name=None, with_timestamp=False,
                  return_old_content=False):
+    # pylint: disable = too-many-arguments, too-many-positional-arguments
     """Helper to save the content as JSON file
 
     Calls make_filename with id_ (if given else content['id']), name, and
