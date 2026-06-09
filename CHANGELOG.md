@@ -19,7 +19,7 @@
 
 ## 0.3.1
 
-*This should have been a minor instead of a patch release*
+**Note**: This should have been a minor instead of a patch release.
 
 * More messages
 * Catch more errors
@@ -53,7 +53,7 @@
 
 ## 0.1.0
 
-*Not assigned*
+**Note**: Not assigned
 
 ## 0.0.1
 
