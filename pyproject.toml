@@ -22,3 +22,9 @@ matterbak = "matterbak.matterbak:main"
 [build-system]
 requires = [ "setuptools>=42" ]
 build-backend = "setuptools.build_meta"
+
+
+[tool.pylint.'MAIN']
+# ignores E0401: Unable to import 'mattermost' (import-error)
+# allows to run in pre stage in ci pipelines (github action)
+ignored-modules = "mattermost"
