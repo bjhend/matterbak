@@ -40,6 +40,9 @@ repos:
     rev: v4.0.5
     hooks:
       - id: pylint
+        args:
+          # MattermostApi needs to call mattermost.MMApi._get for its extensions
+          - "--exclude-protected=_get"
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.16
     hooks:

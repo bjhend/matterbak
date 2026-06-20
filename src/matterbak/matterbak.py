@@ -14,11 +14,7 @@ import sys
 import time
 import zipfile
 
-# NOTE: You need to provide a fork of the mattermost package containing
-#       get_teams_for_user endpoint unless the related pull request is executed
-import mattermost
-
-from . import channeldata, dump, teams, users
+from . import mattermostapi, channeldata, dump, teams, users
 
 default_data_dir = pl.Path('data')
 
@@ -68,7 +64,7 @@ class Init:
 
         options:         result of the command line parser
         channels_config: dict with the channels config file content
-        matter:          logged in mattermost.MMApi instance
+        matter:          MattermostApi instance
         username:        name of the logged in user
         user:            data of the logged in user
         user_id:         id of the logged in user
@@ -83,7 +79,7 @@ class Init:
             self.calling_username = creds["user"]
             print(f"Using user '{self.calling_username}'")
 
-            self.matter = self._get_mattermost_api(creds)
+            self.matter = mattermostapi.MattermostApi(creds)
 
             # Initialize RateLimiter using command line argument
             self.rate_limiter = RateLimiter(
@@ -166,14 +162,6 @@ class Init:
             '--version', action='version',
             version=importlib.metadata.version('matterbak'))
         return parser.parse_args()
-
-    def _get_mattermost_api(self, creds):
-        matter = mattermost.MMApi(creds["url"])
-        if "token" in creds:
-            matter.login(bearer=creds["token"])
-        else:
-            matter.login(creds["user"], creds["password"])
-        return matter
 
 
 def backup_direct_channels(init):
@@ -433,7 +421,7 @@ def main():
 
         create_zip_file(init)
 
-    except mattermost.ApiException as ex:
+    except mattermostapi.ApiException as ex:
         print(f"Error accessing Mattermost: {ex}")
         sys.exit(1)
 

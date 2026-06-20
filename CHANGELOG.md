@@ -16,6 +16,8 @@
   - **Attention:** To update the paths delete the teams folder and repeat
     matterbak while you may skip anything except teams
 * Improve code quality by automatic lint check
+* Integrate our extensions to mattermost package to avoid problems with using
+  a fork on Github. Particularly PyPI does not allow GitHub repos as dependency.
 
 ## 0.3.1
 

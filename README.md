@@ -14,7 +14,7 @@ usernames in the filenames.
 Mattermost knows several types of channels:
 
 * Direct channels contain a chat with a single user outside of a team
-* Group channels contain a chat with a multiple users outside of a team
+* Group channels contain a chat with multiple users outside of a team
 * Channels belonging to a team
 
 You can configure for each type which channels should be backed up.
@@ -41,14 +41,6 @@ option `--update-old-posts`.
 The script should work with Python 3.8 or later.
 The [mattermost module](https://github.com/someone-somenet-org/mattermost-python-api)
 is needed for easier API access.
-
-**Note** that we require a version of the mattermost module with additional
-functions. For some of the additions there are already open [pull requests](https://github.com/someone-somenet-org/mattermost-python-api/issues?q=is%3Aopen%20is%3Apr%20author%3A%40bjhend)
-to add these to the package.
-Until all changes are added to the original mattermost module you have to use
-the [`development` branch](https://github.com/bjhend/mattermost-python-api/tree/development)
-of [this fork](https://github.com/bjhend/mattermost-python-api) containing all
-required additions.
 
 If you call the script with `uv run` or `poetry run` the required version of
 the `mattermost` package will be used.
@@ -265,7 +257,7 @@ find the referenced data.
 
 Some files contain binary data. Those are files that were attached to a post as
 well as images (user images, team icons, custom emojis). These files contain
-the ID of the object they belong to in their namse.
+the ID of the object they belong to in their names.
 
 Team and channel members are stored in a special file, containing a list with
 all team/channel member objects.

@@ -6,9 +6,8 @@ Provide class Users
 import http
 import functools
 
-import mattermost
-
 from . import dump
+from .mattermostapi import ApiException
 from .hashablematterdata import HashableMatterData
 
 
@@ -57,7 +56,7 @@ class Users:
                 for user in self._init.matter.get_users_by_ids_list(list(user_ids)):
                     self._user_data[user['id']] = HashableMatterData(user)
 
-        except mattermost.ApiException as ex:
+        except ApiException as ex:
             if ex.args[0]['status_code'] != http.HTTPStatus.REQUEST_ENTITY_TOO_LARGE:
                 raise
 

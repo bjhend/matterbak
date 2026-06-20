@@ -21,8 +21,8 @@ class Teams:
     def __init__(self, init):
         self._init = init
 
-        self._all_teams = self._init.matter.get_teams_for_user(
-            init.calling_user_id)
+        self._all_teams = list(self._init.matter.get_teams_for_user(
+            init.calling_user_id))
         if not self._all_teams:
             print(
                 f"User \'{self._init.calling_username}\' is not member of any team. Aborting.")
