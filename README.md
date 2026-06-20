@@ -42,8 +42,22 @@ The script should work with Python 3.8 or later.
 The [mattermost module](https://github.com/someone-somenet-org/mattermost-python-api)
 is needed for easier API access.
 
-If you call the script with `uv run` or `poetry run` the required version of
-the `mattermost` package will be used.
+## Installation
+
+Matterbak is available as package from PyPI, so you can install it with `pip` or
+`pipx`:
+
+```sh
+# Install from PyPI
+pipx install matterbak
+
+# Test run the tool
+matterbak --version
+matterbak --help
+```
+
+We recommend [`pipx`](https://pipx.pypa.io), because matterbak is an executable
+script.
 
 ## Configuration
 
@@ -209,46 +223,6 @@ The rate limit and jitter options limit the download rate to avoid overloading
 the server. Set to sensible values to be fair to the server operator and other
 users.
 
-## Running
-
-We recommend to use `uv` or `poetry` to run the script. Otherwise install the
-dependencies defined in `pyproject.toml` manually, see section
-[Requirements](#requirements) above.
-
-### Install with uv/poetry
-
-If you are already using uv or poetry for other projects:
-
-```sh
-# With uv
-uv run matterbak
-
-# With poetry
-poetry run matterbak
-```
-
-### Install with pipx
-
-`pipx` is the best way to install this tool as it creates an isolated
-environment automatically, avoiding the need for manual virtual environments.
-
-```sh
-# Install the tool directly from GitHub
-pipx install "git+https://github.com/michael-behrisch/matterbak.git"
-pipx install "git+https://github.com/bjhend/matterbak.git"
-
-# Run the tool
-matterbak --help
-```
-
-### Install with pip (for development)
-
-```sh
-git clone https://github.com/michael-behrisch/matterbak.git
-cd matterbak
-pip install -e .
-```
-
 ## Data
 
 Every Mattermost object has a unique ID. This is always part of the name of the
@@ -267,6 +241,37 @@ threads, any channel data directory contains a threads file with a mapping of
 post IDs. It maps the ID if the root post of a thread on a list of IDs if the
 answer posts. Don't mess up with this file. It will be updated on each run,
 which may fail if the file is corrupted.
+
+## Development install
+
+Clone the [GitHub repo](https://github.com/bjhend/matterbak):
+
+```sh
+git clone https://github.com/bjhend/matterbak.git
+cd matterbak
+```
+
+### Run from local repo
+
+We recommend to use `uv` or `poetry` to run matterbak. Otherwise install the
+dependencies defined in `pyproject.toml` manually, see section
+[Requirements](#requirements) above.
+
+If you are already using `uv` or `poetry` for other projects:
+
+```sh
+# With uv
+uv run matterbak
+
+# With poetry
+poetry run matterbak
+```
+
+Alternatively make an editable install of the local repo:
+
+```sh
+pip install -e .
+```
 
 ## Notes
 

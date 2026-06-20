@@ -18,6 +18,7 @@
 * Improve code quality by automatic lint check
 * Integrate our extensions to mattermost package to avoid problems with using
   a fork on Github. Particularly PyPI does not allow GitHub repos as dependency.
+* Publish on PyPI for easier installation
 
 ## 0.3.1
 
