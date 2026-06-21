@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.5.0
 
 * Increase minimum Python version to 3.10 to enable `matterexport`
 * Add `matterexport` script to export stored data
