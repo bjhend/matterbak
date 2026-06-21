@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.4.0
 
 * Avoid termination during file saving to avoid corrupted files
 * Print '+' as progress symbol when a post is actually saved

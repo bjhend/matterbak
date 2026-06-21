@@ -1,7 +1,7 @@
 [project]
 name = "matterbak"
 description = "Backing up mattermost channels (including files) and users"
-version = "0.3.1"
+version = "0.4.0"
 requires-python = ">= 3.8"
 dependencies = [
     # We extended the mattermost package so we enforce a specific minor version
