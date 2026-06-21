@@ -1,7 +1,7 @@
 [project]
 name = "matterbak"
 description = "Backing up mattermost channels (including files) and users"
-version = "0.5.1"
+version = "0.5.2"
 requires-python = ">= 3.10"
 dependencies = [
     # We extended the mattermost package so we enforce a specific minor version
@@ -11,8 +11,8 @@ readme = "README.md"
 license = "MIT"
 license-files = [ "LICENSE" ]
 authors = [
-    { name="Michael Behrisch", email="oss@behrisch.de" },
     { name="Björn Hendriks", email="bjoern.hendriks@dlr.de" },
+    { name="Michael Behrisch", email="oss@behrisch.de" },
     { name="Daniel Mohr", email="daniel.mohr@dlr.de" },
     { name="Sirko Schindler", email="git@sirko.org" },
 ]

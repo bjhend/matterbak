@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.5.2
 
 * Fix: Detection of already downloaded posts fails on some systems. Thanks Sirko
        for discovering and fixing this.
