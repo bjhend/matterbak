@@ -1,19 +1,37 @@
 [project]
 name = "matterbak"
 description = "Backing up mattermost channels (including files) and users"
-version = "0.3.1"
+version = "0.4.0"
 requires-python = ">= 3.10"
 dependencies = [
-    # mattermost lacks a required endpoint so we get it from a fork not yet merged
-    "mattermost @ git+https://github.com/bjhend/mattermost-python-api.git@development",
-    "icecream"   # for development support
+    # We extended the mattermost package so we enforce a specific minor version
+    "mattermost==10.11.*",
 ]
 readme = "README.md"
+license = "MIT"
+license-files = [ "LICENSE" ]
 authors = [
     { name="Michael Behrisch", email="oss@behrisch.de" },
     { name="Björn Hendriks", email="bjoern.hendriks@dlr.de" },
     { name="Daniel Mohr", email="daniel.mohr@dlr.de" },
 ]
+maintainers = [
+    { name="Björn Hendriks", email="bjoern.hendriks@dlr.de" },
+]
+keywords = [ "mattermost", "backup", "tool", "chat" ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Environment :: Console",
+    "Topic :: Communications :: Chat",
+    "Topic :: System :: Archiving :: Backup",
+    "Topic :: Utilities",
+]
+
+
+[project.urls]
+Repository = "https://github.com/bjhend/matterbak"
+Issues = "https://github.com/bjhend/matterbak/issues"
+Changelog = "https://github.com/bjhend/matterbak/blob/main/CHANGELOG.md"
 
 
 [project.scripts]
@@ -24,3 +42,9 @@ matterexport = "matterexport.matterexport:main"
 [build-system]
 requires = [ "setuptools>=42" ]
 build-backend = "setuptools.build_meta"
+
+
+[tool.pylint.'MAIN']
+# ignores E0401: Unable to import 'mattermost' (import-error)
+# allows to run in pre stage in ci pipelines (github action)
+ignored-modules = "mattermost"
