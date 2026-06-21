@@ -1,6 +1,6 @@
 # Changelog
 
-## Next
+## 0.5.1
 
 * Fix: `matterexport` fails when searching for channel by its ID
 * Fix: Crash of `matterexport` if user data are not found. This may happen if a
