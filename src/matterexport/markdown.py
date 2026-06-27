@@ -8,6 +8,7 @@ import pprint
 
 from .exporter import Exporter
 from . import dataaccessor
+from matterbak import teams
 
 
 class Markdown_Exporter(Exporter):
@@ -76,23 +77,42 @@ class Markdown_Exporter(Exporter):
         if any_reaction:
             self._append_output('')
 
+    def _append_metadata(self, channel):
+        """Append channel metadata to output"""
+        channel_type = channel.metadata['type']
+        match channel_type:
+            case teams.CHANNEL_TYPE_DIRECT:
+                self._append_output(f"# Direct channel\n")
+            case teams.CHANNEL_TYPE_GROUP:
+                self._append_output(f"# Group channel\n")
+            case _:
+                self._append_output(f"# {channel.get_name()}\n")
+
+        self._append_output(f"{channel.metadata['header']}\n")
+        self._append_output(f"{channel.metadata['total_msg_count']} messages in {channel.metadata['total_msg_count_root']} threads or single messages\n")
+
+        self._append_output("## Metadata\n")
+        creation_time = dataaccessor.get_timestamp(channel.metadata['create_at'])
+        self._append_output(f"Created at {creation_time.replace(microsecond=0)}\n")
+
+        if channel_type in teams.CHANNEL_TYPE_TEAM:
+            team_id = channel.metadata['team_id']
+            team = dataaccessor.Team(self.data_dir, team_id)
+            self._append_output(f"Belonging to team {team.get_name()}\n")
+        else:
+            self._append_output("### Members\n")
+            for member in channel.members:
+                user_id = member['user_id']
+                user_name = self.users.get_displayname(user_id)
+                self._append_output(f"* {user_name}")
+            self._append_output("\n")
+
     def channel(self, identifier, by_threads=False):
         """Exporter for a channel, implementation for Exporter.channel()"""
 
         channel = super().channel(identifier, by_threads)
 
-        # TODO: print only meaningful meta data and members
-        # TODO: print team data and icon
-
-        self._append_output(f"# {channel.get_name()}\n")
-        self._append_output(f"{channel.metadata['header']}\n")
-        self._append_output(f"{channel.metadata['total_msg_count']} messages in {channel.metadata['total_msg_count_root']} threads or single messages\n")
-
-        self._append_output("## Metadata\n")
-        self._append_output(pprint.pformat(channel.metadata))
-
-        self._append_output("## Members\n")
-        self._append_output(pprint.pformat(channel.members))
+        self._append_metadata(channel)
 
         self._append_output("## Messages\n")
 
