@@ -273,6 +273,55 @@ Alternatively make an editable install of the local repo:
 pip install -e .
 ```
 
+## Exporter
+
+Besides the `matterbak` command to backup Mattermost data the package provides
+the command `matterexport` to export the stored data in various formats.
+
+Currently only single channels can be exported to either Markdown or a special
+format created by
+[Helmholtz-Gemeinschaft Deutscher Forschungszentren (HGF)](https://www.helmholtz.de/en/)
+for transfering Mattermost channels to Matrix Rooms. See
+[mattermost-archiver-plugin](https://codebase.helmholtz.cloud/helmholtz-matrix/mattermost-archiver-plugin)
+for details.
+
+Execute `matterexport --help` to see actual arguments:
+
+```txt
+usage: matterexport [-h] [-d DATA_DIR] [-o OUTPUT] [-c CHANNEL] [--threads]
+[--version] [{md,hgf}]
+
+positional arguments:
+  {md,hgf}              Type of export, default = md
+
+options:
+  -h, --help            show this help message and exit
+  -d, --data-dir DATA_DIR
+                        Dir with downloaded data, absolute or relative to current
+                        dir, default = data
+  -o, --output OUTPUT   Export destination (interpretation depends on --type)
+  -c, --channel CHANNEL
+                        Channel to export, either channel ID, internal name, or
+                        directory
+  --threads             Sort posts by threads if applicable
+  --version             show program's version number and exit
+```
+
+`matterexport` requires the type of export as positional argument, which has to
+be either `md` or `hgf`. `DATA_DIR`  has to be the top dir of the backup created
+with `matterbak`.
+
+`OUTPUT` is the (path) name of the export file to create. In case of type `md`
+it can be omitted to print the output to `stdout`. Type `hgf` requires an output
+file.
+
+`CHANNEL` must denominate a channel. It can be a Mattermost channel ID, a
+directory containing the backed up posts of a channel, or the internal name of a
+channel, as it is appended to the channel ID in backup files.
+
+`--threads` is only relevant for type `md`. Instead of a chronological list of
+posts the output will contain the posts sorted by threads.
+
 ## Notes
 
 There is also another more complete [Python implementation of the mattermost API](https://github.com/Vaelor/python-mattermost-driver)

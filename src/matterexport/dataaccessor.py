@@ -2,6 +2,11 @@
 Classes to access the database
 """
 
+
+# pylint: disable=fixme
+# TODO: resolve todos and remove this pylint exception
+
+
 import sys
 import pathlib as pl
 import json
@@ -11,20 +16,37 @@ import re
 from matterbak import dump
 
 
-# According to custom-emoji adding dialog, emoji names consist of lower-case letters, numbers, and [+-_]
-emoji_re = re.compile(r':[a-z0-9_+-]+:')
+class DataAccessor:
+    """Main class to access stored data"""
 
+    class InvalidPath(ValueError):
+        """Exception raised when a data object cannot be found"""
+        def __init__(self, path):
+            self.path = path
 
+    @staticmethod
+    def get_timestamp(mattermost_timestamp):
+        """Convert a Mattermost timestamp to a datatime object"""
+        return datetime.datetime.fromtimestamp(mattermost_timestamp / 1000)
 
-def get_timestamp(mattermost_timestamp):
-    """Convert a Mattermost timestamp to a datatime object"""
-    return datetime.datetime.fromtimestamp(mattermost_timestamp / 1000)
+    def __init__(self, data_dir):
+        """Init
 
+        Args:
+            data_dir: root dir of matterbak data
+        """
 
-class Invalid_Path(ValueError):
-    """Exception raised when a data object cannot be found"""
-    def __init__(self, path):
-        self.path = path
+        self.data_dir = data_dir
+        self.users = Users(self.data_dir)
+        # self.emojis = Emojis(self.data_dir)
+
+    def get_team(self, identifier):
+        """Get Team object for identifier"""
+        return Team(self.data_dir, identifier)
+
+    def get_channel(self, identifier):
+        """Get Channel object for identifier"""
+        return Channel(self.data_dir, identifier)
 
 
 class Users:
@@ -36,7 +58,7 @@ class Users:
     def __init__(self, data_dir):
         self.users_dir = data_dir / dump.users_subdir
         if not self.users_dir.is_dir():
-            print(f"Couldn't find directory with user data", file=sys.stderr)
+            print("Couldn't find directory with user data", file=sys.stderr)
             self.users_dir = None
 
         # Cache
@@ -48,24 +70,38 @@ class Users:
             self._data[user_id] = None
             if self.users_dir and self.users_dir.is_dir():
                 for user_path in self.users_dir.iterdir():
-                    if user_path.name.startswith(user_id) and user_path.suffix.lower() == dump.JSON_EXTENSION:
+                    if (user_path.name.startswith(user_id)
+                        and user_path.suffix.lower() == dump.JSON_EXTENSION):
                         with user_path.open(encoding='utf8') as user_file:
                             user = json.load(user_file)
-                        assert user['id'] == user_id
+                        if user['id'] != user_id:
+                            raise ValueError(f"User ID {user['id']} in user data"
+                                             f" file does not conform to filename '{user_path}'")
                         self._data[user_id] = user
                         break
 
         return self._data[user_id]
+
+    def get_given_name(self, user_id):
+        """Return a user ID's first/last name or empty string"""
+        user = self.get_data(user_id)
+        if not user:
+            return ''
+
+        first_name = user.get('first_name', '').strip()
+        last_name = user.get('last_name', '').strip()
+        given_name = f"{first_name} {last_name}".strip()
+        return given_name
 
     def get_displayname(self, user_id):
         """Return best name to display
 
         If availabe returns in this order:
 
-        * nickname
-        * first/last name
-        * username
-        * given user_id
+        1. nickname
+        2. first/last name
+        3. username
+        4. user_id
         """
 
         user = self.get_data(user_id)
@@ -73,21 +109,16 @@ class Users:
         if not user:
             return user_id
 
-        if user['nickname']:
-            return user['nickname']
+        if nickname := user.get('nickname', ''):
+            return nickname
 
-        if user['first_name'] or user['last_name']:
-            parts = []
-            if user['first_name']:
-                parts.append(user['first_name'])
-            if user['last_name']:
-                parts.append(user['last_name'])
-            return ' '.join(parts)
+        if given_name := self.get_given_name(user_id):
+            return given_name
 
-        return user['username']
+        return user.get('username', user_id)
 
     def get_image(self, user_id):
-        """Return user's image if available else None"""
+        """Return user's image file path if available else None"""
         user = self.get_data(user_id)
         if not user:
             return None
@@ -97,22 +128,30 @@ class Users:
             print(f"Found multiple images for user {self.get_displayname(user_id)}, use first one")
         if images:
             return images[0]
-
+        return None
 
 
 class Emojis:
     """Get data for emojis"""
 
     # TODO: implement, also for unicode emojis
+
+    # According to custom-emoji adding dialog, emoji names consist of lower-case
+    # letters, numbers, and [+-_]
+    emoji_re = re.compile(r':[a-z0-9_+-]+:')
+
+    # pylint: disable=unused-argument
     def __init__(self, data_dir):
-        raise NotImplementedError
         # Cache
         self._data = {}
+        raise NotImplementedError
 
     def get_data(self, identifier):
+        """Get data belonging to a emoji ID"""
         raise NotImplementedError
 
     def get_image(self, identifier):
+        """Get emoji image file path"""
         raise NotImplementedError
 
 
@@ -128,7 +167,6 @@ class Team:
             identifier: possible team identifier, see self.get_team_dir()
         """
         self.team_dir = self.get_team_dir(data_dir, identifier)
-        filename = self.team_dir.name
         data_filename = self.team_dir.with_suffix(dump.JSON_EXTENSION)
         with data_filename.open(encoding='utf8') as data_file:
             self.metadata = json.load(data_file)
@@ -151,7 +189,8 @@ class Team:
         def search_dir(pattern):
             candidates = list(teams_dir.glob(pattern + '/'))
             if len(candidates) > 1:
-                raise ValueError(f"Found multiple teams with ID '{identifier}'. Use team ID instead: {candidates}")
+                raise ValueError(f"Found multiple teams with ID '{identifier}'."
+                                 f" Use team ID instead: {candidates}")
             if len(candidates) == 1:
                 return candidates[0]
             return None
@@ -201,13 +240,19 @@ class Channel:
         with data_filename.open(encoding='utf8') as data_file:
             self.metadata = json.load(data_file)
 
-        # TODO: handle missing members/threads files
-
-        members_filename = self.channel_dir.parent / f'{filename}{dump.FILENAME_SEPARATOR}{dump.SUFFIX_MEMBERS}{dump.JSON_EXTENSION}'
+        members_filename = (self.channel_dir.parent /
+                            f'{filename}{dump.FILENAME_SEPARATOR}'
+                            f'{dump.SUFFIX_MEMBERS}{dump.JSON_EXTENSION}')
+        if not members_filename.is_file():
+            raise RuntimeError(f"Missing file with channel members data: {members_filename}")
         with members_filename.open(encoding='utf8') as members_file:
             self.members = json.load(members_file)
 
-        threads_filename = self.channel_dir.parent / f'{filename}{dump.FILENAME_SEPARATOR}{dump.SUFFIX_THREADS}{dump.JSON_EXTENSION}'
+        threads_filename = (self.channel_dir.parent /
+                            f'{filename}{dump.FILENAME_SEPARATOR}'
+                            f'{dump.SUFFIX_THREADS}{dump.JSON_EXTENSION}')
+        if not threads_filename.is_file():
+            raise RuntimeError(f"Missing file with channel threads data: {threads_filename}")
         with threads_filename.open(encoding='utf8') as threads_file:
             self.threads = json.load(threads_file)
 
@@ -234,7 +279,8 @@ class Channel:
         def search_dir(pattern):
             candidates = list(data_dir.rglob(pattern + '/'))
             if len(candidates) > 1:
-                raise ValueError(f"Found multiple channels with ID '{identifier}'. Use channel ID instead: {candidates}")
+                raise ValueError(f"Found multiple channels with ID '{identifier}'."
+                                 f" Use channel ID instead: {candidates}")
             if len(candidates) == 1:
                 return candidates[0]
             return None
@@ -267,7 +313,7 @@ class Channel:
         for post_path in post_files:
             try:
                 post = Post(post_path)
-            except Invalid_Path:
+            except DataAccessor.InvalidPath:
                 continue
 
             yield post
@@ -275,8 +321,8 @@ class Channel:
     def get_post(self, post_id):
         """Get post data"""
         paths = list(self.channel_dir.glob(f'*{post_id}{dump.JSON_EXTENSION}'))
-        # TODO: handle assertion failure
-        assert len(paths) == 1
+        if len(paths) != 1:
+            raise RuntimeError(f"Found {len(paths)} files for post ID {post_id}: {paths}")
         post_path = paths[0]
         return Post(post_path)
 
@@ -315,10 +361,10 @@ class Post:
             post_path: path to post data file
 
         Raises:
-            Invalid_Path: if post_path is invalid
+            InvalidPath: if post_path is invalid
         """
         if post_path.suffix.lower() != dump.JSON_EXTENSION:
-            raise Invalid_Path(post_path)
+            raise DataAccessor.InvalidPath(post_path)
 
         self.post_path = post_path
 
@@ -331,7 +377,7 @@ class Post:
 
     def get_timestamp(self):
         """Return creation time as datetime object"""
-        return get_timestamp(self.data["create_at"])
+        return DataAccessor.get_timestamp(self.data["create_at"])
 
     def get_files(self):
         """Generator for files attached to the post
@@ -339,17 +385,21 @@ class Post:
         Yields pairs of metadata and path to the file.
         """
         files_dir = self.post_path.parent / dump.files_subdir
-        assert files_dir.is_dir()
+        if not files_dir.is_dir():
+            raise RuntimeError(f"Location for attachment files is not a directory: {files_dir}")
 
         for file_id in self.data['file_ids']:
             file_data_path = files_dir / f"{file_id}{dump.JSON_EXTENSION}"
             if not file_data_path.is_file():
-                # TODO: warning
+                print("WARNING: cannot find file with data about attachment ID"
+                      f" {file_id}. Skipping attachment.")
                 continue
 
             with file_data_path.open(encoding='utf8') as file_data_file:
                 file_data = json.load(file_data_file)
-            assert file_id == file_data['id']
+            if file_id != file_data['id']:
+                raise ValueError(f"File ID {file_data['id']} in file data"
+                                f" file does not conform to filename '{file_data_path}'")
 
             file_content_path = files_dir / f"{file_id}{dump.FILENAME_SEPARATOR}{file_data['name']}"
             if not file_content_path.is_file():
@@ -363,7 +413,4 @@ class Post:
         Yields Mattermost reaction data objects.
         """
         if 'metadata' in self.data:
-            for reaction in self.data['metadata'].get('reactions', []):
-                yield reaction
-
-
+            yield from self.data['metadata'].get('reactions', [])

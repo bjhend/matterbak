@@ -3,8 +3,7 @@
 ## Next
 
 * Increase minimum Python version to 3.10 to enable `matterexport`
-* Add `matterexport` script to export stored data, currently only Markdown is
-  supported
+* Add `matterexport` script to export stored data
 
 ## 0.4.0
 

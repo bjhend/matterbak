@@ -3,6 +3,7 @@ Provides base class for all exporters
 """
 
 
+import sys
 import abc
 
 from . import dataaccessor
@@ -19,8 +20,7 @@ class Exporter(abc.ABC):
         Args:
             data_dir: root dir of matterbak data
         """
-        self.data_dir = data_dir
-        self.users = dataaccessor.Users(self.data_dir)
+        self.data_accessor = dataaccessor.DataAccessor(data_dir)
 
     @abc.abstractmethod
     def close(self):
@@ -28,7 +28,6 @@ class Exporter(abc.ABC):
 
         Multiple calls should not harm.
         """
-        pass
 
     def __enter__(self):
         """Enter context"""
@@ -53,10 +52,8 @@ class Exporter(abc.ABC):
         by_threads: Sort output by threads if applicable
         """
         try:
-            channel = dataaccessor.Channel(self.data_dir, identifier)
+            channel = self.data_accessor.get_channel(identifier)
         except ValueError as ex:
             print(ex)
-            exit(1)
+            sys.exit(1)
         return channel
-
-
