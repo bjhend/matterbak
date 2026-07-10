@@ -46,14 +46,14 @@ class ChannelData:
 
         return: post ID contained in the file with the max file name or None
         """
-        latest_post_file = self.posts_dir / ' '
+        latest_post_file = None
         for post_file in self.posts_dir.iterdir():
             if post_file.suffix.lower() != dump.JSON_EXTENSION:
                 continue
-            if post_file.name > latest_post_file.name:
+            if (latest_post_file is None) or (post_file.name > latest_post_file.name):
                 latest_post_file = post_file
 
-        if latest_post_file.exists():
+        if latest_post_file and latest_post_file.exists():
             with latest_post_file.open(encoding="utf8") as post_file:
                 post = json.load(post_file)
                 return post.get('id')
