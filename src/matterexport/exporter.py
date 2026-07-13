@@ -3,7 +3,6 @@ Provides base class for all exporters
 """
 
 
-import sys
 import abc
 
 from . import dataaccessor
@@ -51,9 +50,4 @@ class Exporter(abc.ABC):
                     The first found is taken.
         by_threads: Sort output by threads if applicable
         """
-        try:
-            channel = self.data_accessor.get_channel(identifier)
-        except ValueError as ex:
-            print(ex)
-            sys.exit(1)
-        return channel
+        return self.data_accessor.get_channel(identifier)

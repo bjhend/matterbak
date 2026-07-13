@@ -1,5 +1,11 @@
 # Changelog
 
+## Next
+
+* Fix: `matterexport` fails when searching for channel by its ID
+* Fix: Crash of `matterexport` if user data are not found. This may happen if a
+       user has left Mattermost.
+
 ## 0.5.0
 
 * Increase minimum Python version to 3.10 to enable `matterexport`

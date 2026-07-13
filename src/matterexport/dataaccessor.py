@@ -278,11 +278,12 @@ class Channel:
 
         def search_dir(pattern):
             candidates = list(data_dir.rglob(pattern + '/'))
-            if len(candidates) > 1:
+            candidate_dirs = [ c for c in candidates if c.is_dir() ]
+            if len(candidate_dirs) > 1:
                 raise ValueError(f"Found multiple channels with ID '{identifier}'."
                                  f" Use channel ID instead: {candidates}")
-            if len(candidates) == 1:
-                return candidates[0]
+            if len(candidate_dirs) == 1:
+                return candidate_dirs[0]
             return None
 
         # Try identifier as channel ID

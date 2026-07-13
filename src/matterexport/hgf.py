@@ -55,22 +55,22 @@ class HgfExporter(Exporter):
                     arc_name = name.relative_to(temp_dir)
                     zipf.write(name, arc_name)
 
-    def _make_user_displayname(self, user_id):
-        user = self.data_accessor.users.get_data(user_id)
-        if not user:
+    def _make_user_displayname(self, user_data):
+        if not user_data:
             return "Unknown"
 
-        if given_name := self.data_accessor.users.get_given_name(user_id):
+        if given_name := self.data_accessor.users.get_given_name(user_data.get('id')):
             return given_name
-        if username := user.get('username'):
+        if username := user_data.get('username'):
             return username
         return "Unknown"
 
     def _make_post_data(self, post):
         data = post.data
         user_id = data['user_id']
-        data['user_username'] = self.data_accessor.users.get_data(user_id)['username']
-        data['user_display_name'] = self._make_user_displayname(user_id)
+        user_data = self.data_accessor.users.get_data(user_id)
+        data['user_username'] = user_data['username'] if user_data else 'Unknown'
+        data['user_display_name'] = self._make_user_displayname(user_data)
 
         data_out = {}
         for key in self._post_keys:
