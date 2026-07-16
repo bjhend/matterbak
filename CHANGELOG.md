@@ -1,5 +1,10 @@
 # Changelog
 
+## Next
+
+* Fix: Detection of already downloaded posts fails on some systems. Thanks Sirko
+       for discovering and fixing this.
+
 ## 0.5.1
 
 * Fix: `matterexport` fails when searching for channel by its ID
