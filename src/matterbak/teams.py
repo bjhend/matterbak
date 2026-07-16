@@ -46,7 +46,7 @@ class Teams:
                 for c in self._all_channels_of_some_team
                 if c['type'] == channel_type}
 
-    def get_team_channels(self, team):
+    def get_team_channels(self, team, include_deleted=False ):
         """Get a set of a team's channels the executing user has access to
 
         team: dict with Mattermost team data
@@ -54,7 +54,9 @@ class Teams:
         return: set of HashableMatterData objects with Mattermost channel data
         """
         all_channels = self._init.matter.get_channels_for_user(
-            self._init.calling_user_id, team["id"])
+            self._init.calling_user_id, team["id"],
+            params={ "include_deleted": include_deleted }
+          )
         # Remove direct and group message channels
         return {HashableMatterData(c) for c in all_channels if c['type'] in CHANNEL_TYPE_TEAM}
 

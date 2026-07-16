@@ -110,6 +110,10 @@ The channels to back up are configured in another JSON file
         "team3":
         {
             "exclude": [ "channel4" ]
+        },
+        "team4":
+        {
+          "include_deleted": true
         }
     },
 
@@ -142,7 +146,9 @@ channel types explained above.
 channels from the `include` list are put on the backup list. If the list is
 empty or `include` is not given at all, all channels of the team are put on the
 list. Then, if `exclude` is present, all channels of the `exclude` list are
-removed from the backup list.
+removed from the backup list. Use the `include_delete` to to create backups for
+archived and/or deleted channels as well. All rules from `include` and `exclude`
+will still be applied.
 
 In this example, `channel1` and `channel2` of `team1` are backed up. `channel3`
 will be excluded, because exclusion has priority. In addition, all channels of
