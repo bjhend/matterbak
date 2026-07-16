@@ -4,6 +4,8 @@
 
 * Fix: Detection of already downloaded posts fails on some systems. Thanks Sirko
        for discovering and fixing this.
+* Fix: Archived channels are entirely ignored by matterbak. Thanks Sirko for
+       discovering this and finding a fix.
 
 ## 0.5.1
 

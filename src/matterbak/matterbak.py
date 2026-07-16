@@ -310,8 +310,7 @@ def backup_team_channels(init):
         # Use internal name as part of paths to avoid problems display_name
         # characters not suitable for paths
         team_filename = team['name']
-        include_deleted = team_config.get( 'include_deleted', False )
-        team_channels = init.teams.get_team_channels(team, include_deleted=include_deleted)
+        team_channels = init.teams.get_team_channels(team)
 
         team_channels_to_backup = select_channels_by_names(
             team_channels, team_config, 'include')
